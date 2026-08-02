@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+  <meta name="format-detection" content="telephone=no">
+  <title>瞬息全宇宙：逃离贝果</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    html,
+    body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #090909;
+      font-family: Arial, Helvetica, sans-serif;
+      color: #fff7df;
+      touch-action: none;
+    }
+
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #app {
+      position: relative;
+      width: min(100vw, calc(100vh * 0.5625));
+      height: min(100vh, calc(100vw / 0.5625));
+      max-width: 720px;
+      max-height: 1280px;
+      overflow: hidden;
+      background: #111;
+    }
+
+    #game-canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      background: #0f0f12;
+      touch-action: none;
+    }
+
+    #fatal-error {
+      position: absolute;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 32px;
+      text-align: center;
+      background: rgba(0, 0, 0, 0.86);
+      color: #fff7df;
+      font-size: 28px;
+      line-height: 1.5;
+      z-index: 10;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <canvas id="game-canvas" width="720" height="1280" aria-label="瞬息全宇宙：逃离贝果"></canvas>
+    <div id="fatal-error">哎呀，出错了，请重启试试吧~</div>
+  </div>
+
+  <script src="js/levels/universeParams.js"></script>
+  <script src="js/levels/mapTemplates.js"></script>
+  <script src="js/gameplay/utils.js"></script>
+  <script src="js/gameplay/input.js"></script>
+  <script src="js/gameplay/entities.js"></script>
+  <script src="js/gameplay/game.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    (function patchRandomMazeForPlayOnly() {
+      'use strict';
+
+      function shuffle(array) {
+        for (var i = array.length - 1; i > 0; i -= 1) {
+          var j = Math.floor(Math.random() * (i + 1));
+          var tmp = array[i];
+          array[i] = array[j];
+          array[j] = tmp;
+        }
+        return array;
+      }
+
+      function clamp(value, min, max) {
+        return Math.max(min, Math.min(max, value));
+      }
+
+      function getTileFromWorld(x, y, tileSize, cols, rows) {
+        var col = clamp(Math.floor(x / tileSize), 1, cols - 2);
+        var row = clamp(Math.floor(y / tileSize), 1, rows - 2);
+        return { col: col, row: row };
+      }
+
+      function wouldMake2x2Open(grid, row, col) {
+        for (var dr = -1; dr <= 0; dr += 1) {
+          for (var dc = -1; dc <= 0; dc += 1) {
+            var r0 = row + dr;
+            var c0 = col + dc;
+            if (r0 < 0 || c0 < 0 || r0 + 1 >= grid.length || c0 + 1 >= grid[0].length) {
+              continue;
+            }
+            var openCount = 0;
+            for (var rr = r0; rr <= r0 + 1; rr += 1) {
+              for (var cc = c0; cc <= c0 + 1; cc += 1) {
+                var isCandidate = rr === row && cc === col;
+                if (isCandidate || grid[rr][cc] === '0') {
+                  openCount += 1;
+                }
+              }
+            }
+            if (openCount === 4) {
+              return true;
+            }
+          }
+        }
+        return false;
+      }
+
+      function makeGrid(rows, cols) {
+        var grid = [];
+        for (var r = 0; r < rows; r += 1) {
+          var row = [];
+          for (var c = 0; c < cols; c += 1) {
+            row.push('1');
+          }
+          grid.push(row);
+        }
+        return grid;
+      }
+
+      function openCell(grid, row, col) {
+        grid[row][col] = '0';
+      }
+
+      function isOpen(grid, row, col) {
+        return grid[row][col] === '0';
+      }
+
+      function neighbors4(row, col) {
+        return [
+          { row: row - 1, col: col },
+          { row: row + 1, col: col },
+          { row: row, col: col - 1 },
+          { row: row, col: col + 1 }
+        ];
+      }
+
+      function carveRandomMaze(options) {
+        var rows = options.rows;
+        var cols = options.cols;
+        var anchor = options.anchor;
+        var playerSpawn = options.playerSpawn;
+        var pursuerSpawns = options.pursuerSpawns;
+        var required = options.required;
+        var targetOpen = options.targetOpen;
+
+        var grid = makeGrid(rows, cols);
+
+        function inInterior(r, c) {
+          return r >= 1 && r <= rows - 2 && c >= 1 && c <= cols - 2;
+        }
+
+        var requiredCells = [];
+        requiredCells.push({ row: playerSpawn.row, col: playerSpawn.col });
+        for (var i = 0; i < pursuerSpawns.length; i += 1) {
+          requiredCells.push({ row: pursuerSpawns[i].row, col: pursuerSpawns[i].col });
+        }
+        for (var j = 0; j < required.length; j += 1) {
+          requiredCells.push({ row: required[j].row, col: required[j].col });
+        }
+
+        for (var k = 0; k < requiredCells.length; k += 1) {
+          var rc = requiredCells[k];
+          if (inInterior(rc.row, rc.col)) {
+            openCell(grid, rc.row, rc.col);
+          }
+        }
+
+        if (!inInterior(anchor.row, anchor.col)) {
+          anchor = { row: playerSpawn.row, col: playerSpawn.col };
+        }
+        openCell(grid, anchor.row, anchor.col);
+
+        function carveManhattanPath(from, to) {
+          var r = from.row;
+          var c = from.col;
+          openCell(grid, r, c);
+          var guard = 0;
+          while ((r !== to.row || c !== to.col) && guard < 2000) {
+            guard += 1;
+            var moves = [];
+            if (to.row < r) moves.push({ row: r - 1, col: c });
+            if (to.row > r) moves.push({ row: r + 1, col: c });
+            if (to.col < c) moves.push({ row: r, col: c - 1 });
+            if (to.col > c) moves.push({ row: r, col: c + 1 });
+            shuffle(moves);
+            var moved = false;
+            for (var m = 0; m < moves.length; m += 1) {
+              var nr = moves[m].row;
+              var nc = moves[m].col;
+              if (!inInterior(nr, nc)) {
+                continue;
+              }
+              openCell(grid, nr, nc);
+              r = nr;
+              c = nc;
+              moved = true;
+              break;
+            }
+            if (!moved) {
+              var fallback = shuffle(neighbors4(r, c));
+              for (var f = 0; f < fallback.length; f += 1) {
+                var fr = fallback[f].row;
+                var fc = fallback[f].col;
+                if (inInterior(fr, fc)) {
+                  openCell(grid, fr, fc);
+                  r = fr;
+                  c = fc;
+                  moved = true;
+                  break;
+                }
+              }
+            }
+            if (!moved) {
+              break;
+            }
+          }
+        }
+
+        for (var p = 0; p < requiredCells.length; p += 1) {
+          carveManhattanPath(anchor, requiredCells[p]);
+        }
+
+        function countOpenCells() {
+          var count = 0;
+          for (var r0 = 0; r0 < rows; r0 += 1) {
+            for (var c0 = 0; c0 < cols; c0 += 1) {
+              if (grid[r0][c0] === '0') {
+                count += 1;
+              }
+            }
+          }
+          return count;
+        }
+
+        var openCount = countOpenCells();
+        var openList = [];
+        for (var r1 = 1; r1 <= rows - 2; r1 += 1) {
+          for (var c1 = 1; c1 <= cols - 2; c1 += 1) {
+            if (grid[r1][c1] === '0') {
+              openList.push({ row: r1, col: c1 });
+            }
+          }
+        }
+
+        var iterations = 0;
+        while (openCount < targetOpen && iterations < 8000) {
+          iterations += 1;
+          if (!openList.length) {
+            break;
+          }
+          var base = openList[Math.floor(Math.random() * openList.length)];
+          var nbs = shuffle(neighbors4(base.row, base.col));
+          for (var n = 0; n < nbs.length; n += 1) {
+            var rr2 = nbs[n].row;
+            var cc2 = nbs[n].col;
+            if (!inInterior(rr2, cc2) || isOpen(grid, rr2, cc2)) {
+              continue;
+            }
+            if (wouldMake2x2Open(grid, rr2, cc2)) {
+              continue;
+            }
+            openCell(grid, rr2, cc2);
+            openList.push({ row: rr2, col: cc2 });
+            openCount += 1;
+            break;
+          }
+        }
+
+        var result = [];
+        for (var rr3 = 0; rr3 < rows; rr3 += 1) {
+          result.push(grid[rr3].join(''));
+        }
+        return result;
+      }
+
+      function buildTemplate(gridLines, playerSpawn, pursuerSpawns) {
+        var rows = gridLines.length;
+        var cols = gridLines[0].length;
+        var openCells = [];
+        for (var r = 1; r <= rows - 2; r += 1) {
+          for (var c = 1; c <= cols - 2; c += 1) {
+            if (gridLines[r].charAt(c) === '0') {
+              openCells.push({ row: r, col: c });
+            }
+          }
+        }
+
+        function dist2(a, b) {
+          var dx = a.col - b.col;
+          var dy = a.row - b.row;
+          return dx * dx + dy * dy;
+        }
+
+        var spawn = { row: playerSpawn.row, col: playerSpawn.col };
+        var candidates = [];
+        for (var i = 0; i < openCells.length; i += 1) {
+          var cell = openCells[i];
+          if (cell.row === spawn.row && cell.col === spawn.col) {
+            continue;
+          }
+          if (dist2(cell, spawn) < 5) {
+            continue;
+          }
+          candidates.push(cell);
+        }
+
+        candidates.sort(function (a, b) {
+          return dist2(b, spawn) - dist2(a, spawn);
+        });
+
+        var fragmentSpawns = [];
+        for (var j = 0; j < candidates.length; j += 1) {
+          fragmentSpawns.push({ col: candidates[j].col, row: candidates[j].row });
+        }
+
+        if (!fragmentSpawns.length && openCells.length) {
+          fragmentSpawns.push({ col: openCells[0].col, row: openCells[0].row });
+        }
+
+        return {
+          key: 'mainMaze',
+          name: '贝果迷宫',
+          grid: gridLines,
+          playerSpawn: { col: playerSpawn.col, row: playerSpawn.row },
+          pursuerSpawns: pursuerSpawns.slice(),
+          fragmentSpawns: fragmentSpawns
+        };
+      }
+
+      function ensurePatched() {
+        if (!window.ULEAP_MAPS || !window.ULEAP_CONFIG || !window.ULEAP_Game) {
+          return;
+        }
+
+        var config = window.ULEAP_CONFIG.GAME_CONFIG || {};
+        var rows = config.mapRows || 16;
+        var cols = config.mapCols || 9;
+        var tileSize = config.tileSize || 80;
+
+        var playerSpawn = { col: 1, row: 1 };
+        var pursuerSpawns = [
+          { col: 7, row: 1 },
+          { col: 7, row: 13 },
+          { col: 1, row: 13 },
+          { col: 5, row: 11 }
+        ];
+
+        function buildNewTemplate(anchorTile, requiredTiles) {
+          var gridLines = carveRandomMaze({
+            rows: rows,
+            cols: cols,
+            anchor: { row: anchorTile.row, col: anchorTile.col },
+            playerSpawn: { row: playerSpawn.row, col: playerSpawn.col },
+            pursuerSpawns: pursuerSpawns.map(function (s) { return { row: s.row, col: s.col }; }),
+            required: requiredTiles || [],
+            targetOpen: 63
+          });
+
+          return buildTemplate(gridLines, playerSpawn, pursuerSpawns);
+        }
+
+        function rebuildMazeForGame(game, anchorTile) {
+          var template = buildNewTemplate(anchorTile, []);
+          window.ULEAP_MAPS.mainMaze = template;
+          game.map = game.buildMap(template);
+        }
+
+        var proto = window.ULEAP_Game.prototype;
+        if (!proto.__playRandomMazePatched) {
+          proto.__playRandomMazePatched = true;
+
+          var originalReset = proto.reset;
+          proto.reset = function patchedReset() {
+            rebuildMazeForGame(this, { row: playerSpawn.row, col: playerSpawn.col });
+            return originalReset.apply(this, arguments);
+          };
+
+          var originalApplyUniverse = proto.applyUniverse;
+          proto.applyUniverse = function patchedApplyUniverse(key) {
+            var shouldRebuild = !this.currentUniverseKey || key !== this.currentUniverseKey;
+            if (shouldRebuild) {
+              var anchor = getTileFromWorld(this.player ? this.player.x : tileSize, this.player ? this.player.y : tileSize, tileSize, cols, rows);
+              rebuildMazeForGame(this, anchor);
+            }
+            var result = originalApplyUniverse.apply(this, arguments);
+            if (shouldRebuild && this.fragments && this.fragments.length && this.pickFragmentSpawn) {
+              for (var i = 0; i < this.fragments.length; i += 1) {
+                if (this.fragments[i].active) {
+                  var center = this.pickFragmentSpawn();
+                  this.fragments[i].x = center.x;
+                  this.fragments[i].y = center.y;
+                }
+              }
+            }
+            return result;
+          };
+        }
+
+        if (window.ULEAP_MAPS && window.ULEAP_MAPS.mainMaze && !window.ULEAP_MAPS.mainMaze.__randomizedForPlay) {
+          var initial = buildNewTemplate({ row: playerSpawn.row, col: playerSpawn.col }, []);
+          initial.__randomizedForPlay = true;
+          window.ULEAP_MAPS.mainMaze = initial;
+        }
+      }
+
+      ensurePatched();
+    })();
+  </script>
+</body>
+</html>

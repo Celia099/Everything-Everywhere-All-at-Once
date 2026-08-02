@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>关卡数值机制（Play）</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #050814;
+      --panel: rgba(10, 15, 37, 0.86);
+      --line: rgba(111, 206, 255, 0.22);
+      --text: rgba(245, 247, 255, 0.92);
+      --muted: rgba(245, 247, 255, 0.62);
+      --accent: #74f2ce;
+      --accent2: #ffbf69;
+      --danger: #ff6b5e;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      background:
+        radial-gradient(circle at 18% 22%, rgba(31, 66, 146, 0.24), transparent 32%),
+        radial-gradient(circle at 82% 18%, rgba(52, 115, 119, 0.18), transparent 24%),
+        radial-gradient(circle at 50% 120%, rgba(139, 48, 84, 0.14), transparent 38%),
+        var(--bg);
+      color: var(--text);
+      font-family: "SF Pro Display", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", system-ui, sans-serif;
+    }
+
+    a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    .shell {
+      min-height: 100%;
+      padding:
+        env(safe-area-inset-top, 0)
+        env(safe-area-inset-right, 0)
+        env(safe-area-inset-bottom, 0)
+        env(safe-area-inset-left, 0);
+      display: grid;
+      place-items: start center;
+      padding: 18px;
+    }
+
+    .page {
+      width: min(1100px, 100%);
+      display: grid;
+      gap: 14px;
+    }
+
+    .hero {
+      border: 1px solid var(--line);
+      background: linear-gradient(180deg, rgba(10, 15, 37, 0.92), var(--panel));
+      backdrop-filter: blur(10px);
+      padding: 16px 16px;
+      display: grid;
+      gap: 6px;
+    }
+
+    .hero__title {
+      margin: 0;
+      font-size: 18px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-weight: 800;
+    }
+
+    .hero__sub {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.7;
+    }
+
+    .grid {
+      display: grid;
+      gap: 14px;
+      grid-template-columns: 1fr;
+    }
+
+    @media (min-width: 980px) {
+      .grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    .card {
+      border: 1px solid var(--line);
+      background: rgba(10, 15, 37, 0.52);
+      backdrop-filter: blur(8px);
+      padding: 14px 14px;
+      display: grid;
+      gap: 10px;
+      min-height: 0;
+    }
+
+    .card__title {
+      margin: 0;
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: rgba(245, 247, 255, 0.86);
+    }
+
+    .card__desc {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.7;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(255, 255, 255, 0.06);
+      color: rgba(245, 247, 255, 0.86);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+    }
+
+    .badge--accent {
+      border-color: rgba(116, 242, 206, 0.34);
+      background: rgba(116, 242, 206, 0.12);
+    }
+
+    .badge--accent2 {
+      border-color: rgba(255, 191, 105, 0.34);
+      background: rgba(255, 191, 105, 0.12);
+    }
+
+    .badge--danger {
+      border-color: rgba(255, 107, 94, 0.34);
+      background: rgba(255, 107, 94, 0.12);
+    }
+
+    .row {
+      display: grid;
+      gap: 10px;
+    }
+
+    .kv {
+      display: grid;
+      grid-template-columns: 190px 1fr;
+      gap: 10px;
+      padding: 10px 10px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(0, 0, 0, 0.18);
+    }
+
+    .kv__k {
+      color: rgba(245, 247, 255, 0.86);
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      font-size: 12px;
+      text-transform: uppercase;
+    }
+
+    .kv__v {
+      color: rgba(245, 247, 255, 0.86);
+      font-size: 13px;
+      line-height: 1.7;
+    }
+
+    .list {
+      margin: 0;
+      padding-left: 18px;
+      color: rgba(245, 247, 255, 0.86);
+      font-size: 13px;
+      line-height: 1.7;
+    }
+
+    .list li {
+      margin: 6px 0;
+    }
+
+    .mono {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 12.5px;
+      color: rgba(245, 247, 255, 0.9);
+      background: rgba(0, 0, 0, 0.24);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 0 6px;
+      border-radius: 8px;
+      display: inline-block;
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <div class="page">
+      <header class="hero">
+        <h1 class="hero__title">关卡数值机制（Play）</h1>
+        <p class="hero__sub">
+          本页面用于记录 <span class="mono">play.html</span> 运行时的关卡数值与规则（迷宫、坍塌值、碎片、技能、贝果 AI）。
+          入口建议使用 <a href="./play.html">play.html</a>。
+        </p>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          <span class="badge badge--accent">地图：9×16（单格通路）</span>
+          <span class="badge badge--accent2">第1关：tutorial</span>
+          <span class="badge badge--danger">失败：坍塌值 ≥ 100</span>
+        </div>
+      </header>
+
+      <section class="grid">
+        <article class="card">
+          <h2 class="card__title">地图与空间</h2>
+          <p class="card__desc">地图与操作手感绑定：尺寸、tile 大小、圆形碰撞半径不变。</p>
+          <div class="row">
+            <div class="kv">
+              <div class="kv__k">逻辑分辨率</div>
+              <div class="kv__v"><span class="mono">720 × 1280</span></div>
+            </div>
+            <div class="kv">
+              <div class="kv__k">迷宫网格</div>
+              <div class="kv__v"><span class="mono">mapCols = 11</span>，<span class="mono">mapRows = 15</span>，边框为墙（1），通路为 0。</div>
+            </div>
+            <div class="kv">
+              <div class="kv__k">通路宽度</div>
+              <div class="kv__v">单格通路，<span class="mono">tileSize = 60</span>（每格 60px）。</div>
+            </div>
+            <div class="kv">
+              <div class="kv__k">出生点（格）</div>
+              <div class="kv__v">玩家：<span class="mono">(1,1)</span>；贝果出生点（循环使用）：<span class="mono">(9,1)</span> <span class="mono">(9,13)</span> <span class="mono">(1,13)</span> <span class="mono">(6,11)</span></div>
+            </div>
+          </div>
+        </article>
+
+        <article class="card">
+          <h2 class="card__title">角色与碰撞</h2>
+          <p class="card__desc">角色为圆形碰撞体；所有墙体碰撞通过圆-方块推挤解决，保证不卡墙。</p>
+          <div class="row">
+            <div class="kv">
+              <div class="kv__k">玩家</div>
+              <div class="kv__v"><span class="mono">radius = 13</span>，<span class="mono">speed = 140</span></div>
+            </div>
+            <div class="kv">
+              <div class="kv__k">长按加速</div>
+              <div class="kv__v">
+                全宇宙统一启用：短按/刚启动时灵敏度 <span class="mono">60</span>；
+                按住 <span class="mono">0.3s</span> 后开始线性加速；
+                <span class="mono">0.8s</span> 达到峰值灵敏度 <span class="mono">80</span>；
+                松开即刻恢复至 <span class="mono">60</span>。
+              </div>
+            </div>
+            <div class="kv">
+              <div class="kv__k">贝果（追逐者）</div>
+              <div class="kv__v"><span class="mono">radius = 12</span>；速度/视野由宇宙参数决定（见下方）。</div>
+            </div>
+            <div class="kv">
+              <div class="kv__k">碎片</div>
+              <div class="kv__v"><span class="mono">radius = 8</span></div>
+            </div>
+          </div>
+        </article>
+
+        <article class="card">
+          <h2 class="card__title">坍塌值系统</h2>
+          <p class="card__desc">核心进度条：随时间上升，靠收集碎片/技能下降，触墙无额外惩罚，被贝果撞击会额外上升。</p>
+          <div class="row">
+            <div class="kv">
+              <div class="kv__k">初始坍塌值</div>
+              <div class="kv__v"><span class="mono">initialCollapse = 50</span></div>
+            </div>
+            <div class="kv">
+              <div class="kv__k">时间增长（分段）</div>
+              <div class="kv__v">
+                第1关：<span class="mono">+0.5%/秒</span>（基础）；
+                第2关：<span class="mono">0–30s +1.2%/秒</span>，<span class="mono">30s+ +2.0%/秒</span>
+              </div>
+            </div>
+            <div class="kv">
+              <div class="kv__k">靠近贝果加速</div>
+              <div class="kv__v">
+                两段区域：外圈 <span class="mono">150</span>、内圈 <span class="mono">90</span>。
+                第1关为绝对增速（外圈 <span class="mono">+0.8%/秒</span>，内圈 <span class="mono">+1.2%/秒</span>）；
+                第2关为倍率（外圈 <span class="mono">×1.5</span>，内圈 <span class="mono">×2.5</span>）。
+              </div>
+            </div>
+            <div class="kv">
+              <div class="kv__k">撞击惩罚</div>
+              <div class="kv__v">被贝果撞到一次：<span class="mono">+12%</span>，并将该贝果重置回对应出生点且立即静止。</div>
+            </div>
+            <div class="kv">
+              <div class="kv__k">胜负条件</div>
+              <div class="kv__v">胜利：<span class="mono">collapse ≤ 0</span>；失败：<span class="mono">collapse ≥ 100</span>。</div>
+            </div>
+          </div>
+        </article>
+
+        <article class="card">
+          <h2 class="card__title">碎片系统</h2>
+          <p class="card__desc">碎片只能出现在通路格上；刷新会避开玩家与贝果附近区域，避免“刷脸”。</p>
+          <div class="row">
+            <div class="kv">
+              <div class="kv__k">同时存在数量</div>
+              <div class="kv__v"><span class="mono">最多同时 7 个</span></div>
+            </div>
+            <div class="kv">
+              <div class="kv__k">收集收益</div>
+              <div class="kv__v">第1关：每个 <span class="mono">-8%</span>；第2关：每个 <span class="mono">-5%</span></div>
+            </div>
+            <div class="kv">
+              <div class="kv__k">复活时间</div>
+              <div class="kv__v">第1关：<span class="mono">2.5s</span>；第2关：<span class="mono">2.0s</span>；第2关当场上碎片 ≤ 3 时，会自动补到 5。</div>
+            </div>
+            <div class="kv">
+              <div class="kv__k">安全刷新距离</div>
+              <div class="kv__v"><span class="mono">safeSpawnDistanceFromPlayer = 170</span>（离玩家太近不刷；离贝果也会做近似约束）。</div>
+            </div>
+            <div class="kv">
+              <div class="kv__k">第1关目标</div>
+              <div class="kv__v">通关条件按当前实现为：将坍塌值降至 0%。</div>
+            </div>
+          </div>
+        </article>
+
+        <article class="card">
+          <h2 class="card__title">技能（跃迁）</h2>
+          <p class="card__desc">技能用于“换宇宙 + 降坍塌”。教程关与正式关的技能效果不同。</p>
+          <div class="row">
+            <div class="kv">
+              <div class="kv__k">冷却</div>
+              <div class="kv__v">第1关：无跃迁技能；第2关：<span class="mono">13s</span></div>
+            </div>
+            <div class="kv">
+              <div class="kv__k">降坍塌</div>
+              <div class="kv__v">第2关：单次 <span class="mono">-15%</span></div>
+            </div>
+            <div class="kv">
+              <div class="kv__k">正式关效果</div>
+              <div class="kv__v">随机切换宇宙（四宇宙池），且禁止连续切换到同一个宇宙。</div>
+            </div>
+            <div class="kv">
+              <div class="kv__k">教程关效果</div>
+              <div class="kv__v">技能会把宇宙稳定在石头宇宙，并重置追逐者位置。</div>
+            </div>
+          </div>
+        </article>
+
+        <article class="card">
+          <h2 class="card__title">贝果 AI（追逐/游走）</h2>
+          <p class="card__desc">基于网格可走格与圆形碰撞：在视野内追逐玩家，否则随机游走到 walkableCells 的目标格。</p>
+          <div class="row">
+            <div class="kv">
+              <div class="kv__k">决策频率</div>
+              <div class="kv__v">追逐：<span class="mono">chaseDecisionInterval = 0.18s</span>；游走：<span class="mono">wanderDecisionInterval = 0.6s</span></div>
+            </div>
+            <div class="kv">
+              <div class="kv__k">卡住检测</div>
+              <div class="kv__v"><span class="mono">stuckCheckInterval = 0.9s</span>；若位移不足会重置游走目标。</div>
+            </div>
+            <div class="kv">
+              <div class="kv__k">方向可行性采样</div>
+              <div class="kv__v">路径可行性会做短距离探测（典型探测距离 28/32），确保不会卡墙。</div>
+            </div>
+          </div>
+        </article>
+      </section>
+
+      <section class="card">
+        <h2 class="card__title">宇宙参数（速度/视野/数量）</h2>
+        <p class="card__desc">每次跃迁进入不同宇宙，会改变贝果数量、速度与视野。</p>
+        <div class="row">
+          <div class="kv">
+            <div class="kv__k">石头宇宙（stone）</div>
+            <div class="kv__v">
+              第1关：贝果数 <span class="mono">1</span>；速度 <span class="mono">80px/s</span>；视野 <span class="mono">60px</span>
+              <br>
+              第2关（简单模式）：贝果数 <span class="mono">2</span>；速度 <span class="mono">70px/s</span>；视野 <span class="mono">60px</span>
+            </div>
+          </div>
+          <div class="kv">
+            <div class="kv__k">洗衣店宇宙（laundromat）</div>
+            <div class="kv__v">贝果数 <span class="mono">3</span>；速度 <span class="mono">120px/s</span>；视野 <span class="mono">100px</span></div>
+          </div>
+          <div class="kv">
+            <div class="kv__k">热狗宇宙（hotdog）</div>
+            <div class="kv__v">贝果数 <span class="mono">5</span>；速度 <span class="mono">80px/s</span>；视野 <span class="mono">100px</span></div>
+          </div>
+          <div class="kv">
+            <div class="kv__k">功夫宇宙（kungfu）</div>
+            <div class="kv__v">贝果数 <span class="mono">3</span>；速度 <span class="mono">80px/s</span>；视野 <span class="mono">160px</span></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2 class="card__title">第二关跃迁权重（随机池）</h2>
+        <p class="card__desc">第2关跃迁使用基础权重抽取；抽取时会先排除“当前宇宙”，再对剩余权重做归一化。</p>
+        <div class="row">
+          <div class="kv">
+            <div class="kv__k">基础权重（全局）</div>
+            <div class="kv__v">石头 <span class="mono">20%</span>；洗衣店 <span class="mono">25%</span>；热狗 <span class="mono">25%</span>；功夫 <span class="mono">30%</span></div>
+          </div>
+          <div class="kv">
+            <div class="kv__k">第2关权重（抽取策略）</div>
+            <div class="kv__v">每次跃迁：排除当前宇宙后，对剩余宇宙按基础权重归一化抽取（总和为 100%）。</div>
+          </div>
+          <div class="kv">
+            <div class="kv__k">连续限制</div>
+            <div class="kv__v">跃迁禁止连续切换到同一个宇宙（抽取时排除当前宇宙）。</div>
+          </div>
+          <div class="kv">
+            <div class="kv__k">开局限制</div>
+            <div class="kv__v">第2关开局不会落在石头宇宙；开局会在洗衣店/热狗/功夫中按权重归一化抽取。</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2 class="card__title">随机迷宫（四宇宙约束）</h2>
+        <p class="card__desc">每次进入游戏、每次跃迁到新宇宙，会生成符合该宇宙风格的随机迷宫，并重算碎片刷新点。</p>
+        <ul class="list">
+          <li>每次进入游戏（reset）生成新迷宫；每次切换宇宙（universe key 变化）生成新迷宫。</li>
+          <li>迷宫边框固定为墙；玩家出生点与贝果出生点保证为通路。</li>
+          <li>地形兜底：尽量消除全封闭死胡同与极端超长窄道，避免地形导致的难度异常。</li>
+          <li>碎片刷新：热狗/功夫优先交汇处与开阔处；石头/洗衣店为普通随机。所有刷新点都在通路格上，且避开玩家初始位置附近。</li>
+        </ul>
+      </section>
+    </div>
+  </div>
+</body>
+</html>

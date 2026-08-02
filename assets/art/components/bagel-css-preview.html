@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bagel JS Preview</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background:
+        linear-gradient(45deg, rgba(255,255,255,0.04) 25%, transparent 25%),
+        linear-gradient(-45deg, rgba(255,255,255,0.04) 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, rgba(255,255,255,0.04) 75%),
+        linear-gradient(-45deg, transparent 75%, rgba(255,255,255,0.04) 75%),
+        #141821;
+      background-size: 24px 24px;
+      background-position: 0 0, 0 12px, 12px -12px, -12px 0;
+      color: #f4ebd2;
+      font-family: Arial, Helvetica, sans-serif;
+      padding: 24px;
+    }
+
+    .card {
+      width: min(92vw, 460px);
+      padding: 24px;
+      border-radius: 18px;
+      background: #1b202a;
+      border: 1px solid #303847;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.28);
+    }
+
+    h1 {
+      margin: 0 0 10px;
+      font-size: 24px;
+    }
+
+    p {
+      margin: 0 0 20px;
+      color: #c7d0dc;
+      line-height: 1.6;
+      font-size: 14px;
+    }
+
+    .stage {
+      min-height: 220px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.03);
+      overflow: hidden;
+    }
+
+    canvas {
+      width: 256px;
+      height: 256px;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Bagel JS Preview</h1>
+    <p>这是新版 `贝果像素透明底.js` 的直接预览效果。当前版本改成了纯 Canvas 像素绘制，整体轮廓、内孔、高光和芝麻分布都更接近你的参考图。</p>
+    <div class="stage">
+      <canvas id="bagel-demo-canvas" width="256" height="256" aria-label="Bagel JS Preview"></canvas>
+    </div>
+  </div>
+  <script src="code/贝果像素透明底.js"></script>
+</body>
+</html>

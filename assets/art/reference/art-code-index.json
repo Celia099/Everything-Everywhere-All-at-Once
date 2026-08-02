@@ -1,0 +1,62 @@
+[
+  {
+    "type": "code",
+    "name": "prompt_notes.txt",
+    "lang": "Plain Text",
+    "file": "assets/art/components/code/提示词补充.txt"
+  },
+  {
+    "type": "code",
+    "name": "bagel_sprite.js",
+    "lang": "JavaScript",
+    "file": "assets/art/components/code/贝果像素透明底.js"
+  },
+  {
+    "type": "code",
+    "name": "stone_sprite.js",
+    "lang": "JavaScript",
+    "file": "assets/art/components/code/石头代码.js"
+  },
+  {
+    "type": "code",
+    "name": "coin_sprite.js",
+    "lang": "JavaScript",
+    "file": "assets/art/components/code/硬币代码.js"
+  },
+  {
+    "type": "code",
+    "name": "tutorial_fragment.js",
+    "lang": "JavaScript",
+    "file": "assets/art/components/code/第一关默认碎片.js"
+  },
+  {
+    "type": "code",
+    "name": "classic_evelyn.js",
+    "lang": "JavaScript",
+    "file": "assets/art/components/code/经典皮肤玩家.js"
+  },
+  {
+    "type": "code",
+    "name": "hotdog_evelyn.js",
+    "lang": "JavaScript",
+    "file": "assets/art/components/code/香肠手玩家.js"
+  },
+  {
+    "type": "code",
+    "name": "kungfu_evelyn.js",
+    "lang": "JavaScript",
+    "file": "assets/art/components/code/功夫玩家.js"
+  },
+  {
+    "type": "code",
+    "name": "trophy_sprite.js",
+    "lang": "JavaScript",
+    "file": "assets/art/components/code/奖杯.js"
+  },
+  {
+    "type": "code",
+    "name": "hotdog_hand.js",
+    "lang": "JavaScript",
+    "file": "assets/art/components/code/香肠手.js"
+  }
+]

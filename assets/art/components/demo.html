@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>组件 Demo</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 24px;
+      background: #111318;
+      color: #f2ead5;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 30px;
+    }
+
+    p {
+      margin: 0 0 24px;
+      color: #c8cfdb;
+      line-height: 1.6;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 18px;
+    }
+
+    .card {
+      padding: 16px;
+      background: #191c24;
+      border: 1px solid #2c3240;
+      border-radius: 16px;
+    }
+
+    .title {
+      margin: 0 0 12px;
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .canvas-wrap {
+      min-height: 256px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background:
+        linear-gradient(45deg, rgba(255,255,255,0.04) 25%, transparent 25%),
+        linear-gradient(-45deg, rgba(255,255,255,0.04) 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, rgba(255,255,255,0.04) 75%),
+        linear-gradient(-45deg, transparent 75%, rgba(255,255,255,0.04) 75%);
+      background-size: 24px 24px;
+      background-position: 0 0, 0 12px, 12px -12px, -12px 0;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    canvas {
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+      flex: 0 0 auto;
+      width: 256px;
+      height: 256px;
+    }
+  </style>
+</head>
+<body>
+  <h1>组件 Demo</h1>
+  <p>这个页面集中展示当前像素组件脚本的默认绘制效果，便于你对照素材图检查“改成纯 JS 后图像是否保持不变”。</p>
+
+  <div class="grid">
+    <section class="card">
+      <div class="title">贝果像素透明底</div>
+      <div class="canvas-wrap"><canvas id="bagel-demo-canvas" width="256" height="256"></canvas></div>
+    </section>
+    <section class="card">
+      <div class="title">石头代码</div>
+      <div class="canvas-wrap"><canvas id="stone-demo-canvas" width="256" height="256"></canvas></div>
+    </section>
+    <section class="card">
+      <div class="title">第一关默认碎片</div>
+      <div class="canvas-wrap"><canvas id="fragment-demo-canvas" width="256" height="256"></canvas></div>
+    </section>
+    <section class="card">
+      <div class="title">经典皮肤玩家</div>
+      <div class="canvas-wrap"><canvas id="classic-player-demo-canvas" width="256" height="256"></canvas></div>
+    </section>
+    <section class="card">
+      <div class="title">香肠手玩家</div>
+      <div class="canvas-wrap"><canvas id="hotdog-player-demo-canvas" width="256" height="256"></canvas></div>
+    </section>
+    <section class="card">
+      <div class="title">功夫玩家</div>
+      <div class="canvas-wrap"><canvas id="kungfu-player-demo-canvas" width="256" height="256"></canvas></div>
+    </section>
+    <section class="card">
+      <div class="title">奖杯</div>
+      <div class="canvas-wrap"><canvas id="trophy-demo-canvas" width="256" height="256"></canvas></div>
+    </section>
+    <section class="card">
+      <div class="title">香肠手</div>
+      <div class="canvas-wrap"><canvas id="hotdog-hand-demo-canvas" width="256" height="256"></canvas></div>
+    </section>
+    <section class="card">
+      <div class="title">硬币代码</div>
+      <div class="canvas-wrap"><canvas id="c" width="256" height="256"></canvas></div>
+    </section>
+  </div>
+
+  <script src="code/贝果像素透明底.js"></script>
+  <script src="code/石头代码.js"></script>
+  <script src="code/第一关默认碎片.js"></script>
+  <script src="code/经典皮肤玩家.js"></script>
+  <script src="code/香肠手玩家.js"></script>
+  <script src="code/功夫玩家.js"></script>
+  <script src="code/奖杯.js"></script>
+  <script src="code/香肠手.js"></script>
+  <script src="code/硬币代码.js"></script>
+</body>
+</html>
