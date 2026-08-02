@@ -6,6 +6,20 @@
   <meta name="format-detection" content="telephone=no">
   <title>瞬息全宇宙：逃离贝果</title>
   <style>
+    :root {
+      --ui-text: #fff7df;
+      --ui-text-muted: rgba(255, 247, 223, 0.92);
+      --ui-title-size: 34px;
+      --ui-body-size: 16px;
+      --ui-button-width: 260px;
+      --ui-button-height: 56px;
+      --ui-button-font-size: 16px;
+      --ui-button-bg: rgba(255, 255, 255, 0.13);
+      --ui-button-border: rgba(255, 255, 255, 0.78);
+      --ui-gap: 22px;
+      --ui-shadow: rgba(5, 5, 16, 0.58);
+    }
+
     * {
       box-sizing: border-box;
       -webkit-tap-highlight-color: transparent;
@@ -19,9 +33,11 @@
       height: 100%;
       overflow: hidden;
       background: #090909;
-      font-family: Arial, Helvetica, sans-serif;
-      color: #fff7df;
+      font-family: "Courier New", "Lucida Console", monospace;
+      color: var(--ui-text);
       touch-action: none;
+      -webkit-font-smoothing: none;
+      text-rendering: geometricPrecision;
     }
 
     body {
@@ -79,8 +95,8 @@
       padding: 32px;
       text-align: center;
       background: rgba(0, 0, 0, 0.86);
-      color: #fff7df;
-      font-size: 28px;
+      color: var(--ui-text);
+      font-size: var(--ui-body-size);
       line-height: 1.5;
       z-index: 10;
     }
@@ -112,74 +128,158 @@
       pointer-events: none;
     }
 
-    #start-screen {
-      background: transparent;
+    #start-screen,
+    #story-screen {
+      padding: 0;
+      align-items: stretch;
+      justify-content: flex-start;
+      text-align: left;
+      background: #05050a;
       z-index: 9;
+      cursor: pointer;
     }
 
-    #opening-art {
-      display: none;
+    #opening-art,
+    #story-slide {
+      display: block;
       position: absolute;
       inset: 0;
       background-color: #05050a;
-      background-image: url('assets/art/backgrounds/bg_universe_stone.png');
       background-repeat: no-repeat;
       background-position: center;
       background-size: cover;
-      transform: scale(1);
-      animation: openingZoom 6400ms ease-in-out infinite alternate;
-      z-index: 0;
+      transform: scale(1.02);
     }
 
-    #opening-art::after {
-      content: "";
+    #opening-art {
+      animation: openingZoom 6400ms ease-in-out infinite alternate;
+    }
+
+    #story-slide.story-slide--play {
+      animation: storyZoom 3200ms ease forwards;
+    }
+
+    .opening-shade {
       position: absolute;
       inset: 0;
-      background:
-        radial-gradient(circle at 50% 30%, rgba(0,0,0,0.28), rgba(0,0,0,0.82) 70%),
-        rgba(0,0,0,0.24);
-    }
-
-    #start-screen > * {
-      position: relative;
       z-index: 1;
+      pointer-events: none;
+      background:
+        linear-gradient(180deg, rgba(5, 5, 16, 0.18) 0%, rgba(5, 5, 16, 0.04) 46%, rgba(5, 5, 16, 0.72) 100%);
     }
 
-    #start-title {
-      margin: 0;
-      font-size: 40px;
+    .opening-content {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      flex: 1;
+      flex-direction: column;
+      align-items: flex-end;
+      justify-content: flex-end;
+      width: 100%;
+      min-height: 100%;
+      padding: max(62px, calc(48px + env(safe-area-inset-top))) 28px max(42px, calc(28px + env(safe-area-inset-bottom)));
+      pointer-events: none;
+    }
+
+    .opening-copy {
+      width: min(520px, 92%);
+      color: var(--ui-text);
+      font-family: "Courier New", "Lucida Console", monospace;
+      text-align: right;
+      text-shadow:
+        2px 0 0 #080812,
+        -2px 0 0 #080812,
+        0 2px 0 #080812,
+        0 -2px 0 #080812,
+        3px 3px 0 rgba(8, 8, 18, 0.78);
+    }
+
+    #start-title,
+    #story-title {
+      margin: 0 0 14px;
+      color: var(--ui-text);
+      font-size: var(--ui-title-size);
+      line-height: 1.2;
       letter-spacing: 0.08em;
-      color: rgba(255, 247, 223, 0.96);
-      text-shadow: 0 10px 40px rgba(0, 0, 0, 0.7);
     }
 
-    #start-subtitle {
-      margin: 14px 0 0 0;
-      max-width: 560px;
-      font-size: 16px;
-      line-height: 1.8;
-      color: rgba(255, 247, 223, 0.78);
+    #start-subtitle,
+    #story-caption {
+      margin: 0 0 0 auto;
+      max-width: 480px;
+      color: var(--ui-text-muted);
+      font-size: var(--ui-body-size);
+      line-height: 1.7;
+      letter-spacing: 0.03em;
     }
 
-    #start-button,
+    #music-toggle {
+      position: absolute;
+      top: max(12px, env(safe-area-inset-top));
+      right: 12px;
+      z-index: 12;
+      appearance: none;
+      display: grid;
+      place-items: center;
+      width: 36px;
+      height: 36px;
+      border: 2px solid var(--ui-button-border);
+      border-radius: 50%;
+      padding: 0;
+      color: var(--ui-text);
+      background: var(--ui-button-bg);
+      cursor: pointer;
+      box-shadow: 2px 2px 0 var(--ui-shadow);
+      transition: opacity 160ms ease;
+    }
+
+    #music-toggle.music-toggle--game {
+      background: var(--ui-button-bg);
+    }
+
+    #music-toggle svg {
+      width: 22px;
+      height: 22px;
+      overflow: visible;
+      fill: currentColor;
+      shape-rendering: crispEdges;
+    }
+
+    #music-toggle .speaker-waves,
+    #music-toggle[data-state="playing"] .speaker-muted-mark {
+      display: none;
+    }
+
+    #music-toggle[data-state="playing"] .speaker-waves {
+      display: block;
+    }
+
+    #music-toggle[data-state="playing"] {
+      border-color: var(--ui-button-border);
+      background: var(--ui-button-bg);
+      box-shadow: 2px 2px 0 var(--ui-shadow);
+    }
+
     #gate-button,
     #victory-button {
-      margin-top: 22px;
+      width: min(var(--ui-button-width), 100%);
+      min-height: var(--ui-button-height);
+      margin-top: var(--ui-gap);
       appearance: none;
-      border: 2px solid rgba(255, 217, 102, 0.7);
-      background: rgba(255, 217, 102, 0.14);
-      color: rgba(255, 247, 223, 0.96);
-      border-radius: 16px;
-      padding: 14px 18px;
-      font-size: 16px;
+      border: 2px solid var(--ui-button-border);
+      background: var(--ui-button-bg);
+      color: var(--ui-text);
+      border-radius: 999px;
+      padding: 0 24px;
+      font-family: "Courier New", "Lucida Console", monospace;
+      font-size: var(--ui-button-font-size);
       font-weight: 700;
       letter-spacing: 0.12em;
-      text-transform: uppercase;
       cursor: pointer;
-      box-shadow: 0 18px 40px rgba(0, 0, 0, 0.55);
+      box-shadow: 3px 3px 0 var(--ui-shadow);
     }
 
-    #start-button:active,
     #gate-button:active,
     #victory-button:active {
       transform: translateY(1px);
@@ -190,69 +290,34 @@
       cursor: default;
     }
 
-    #story-screen {
-      padding: 0;
-      background: transparent;
-      z-index: 9;
-    }
-
-    #story-slide {
-      display: none;
-      position: absolute;
-      inset: 0;
-      display: grid;
-      place-items: center;
-      background:
-        radial-gradient(circle at 25% 25%, rgba(116, 242, 206, 0.14), transparent 38%),
-        radial-gradient(circle at 70% 80%, rgba(255, 191, 105, 0.12), transparent 44%),
-        #04050a;
-      transform: scale(1);
-      background-size: cover;
-      background-position: center;
-    }
-
-    #story-slide.story-slide--play {
-      animation: storyZoom 3200ms ease forwards;
-    }
-
-    #story-caption {
-      position: relative;
-      z-index: 1;
-      padding: 18px 20px;
-      border: 1px solid rgba(255, 255, 255, 0.14);
-      border-radius: 18px;
-      background: rgba(0, 0, 0, 0.38);
-      color: rgba(255, 247, 223, 0.92);
-      font-size: 18px;
-      letter-spacing: 0.06em;
-      min-width: min(520px, calc(100% - 56px));
-    }
-
     #gate-screen {
       background:
         radial-gradient(circle at 40% 30%, rgba(255, 217, 102, 0.12), transparent 42%),
         radial-gradient(circle at 70% 75%, rgba(116, 242, 206, 0.1), transparent 46%),
         rgba(0, 0, 0, 0.72);
-      backdrop-filter: blur(8px);
       z-index: 9;
     }
 
     #gate-title,
     #victory-title {
       margin: 0;
-      font-size: 34px;
+      font-size: var(--ui-title-size);
       letter-spacing: 0.08em;
-      color: rgba(255, 247, 223, 0.96);
-      text-shadow: 0 10px 40px rgba(0, 0, 0, 0.7);
+      color: var(--ui-text);
+      font-family: "Courier New", "Lucida Console", monospace;
+      text-shadow: 2px 2px 0 rgba(5, 5, 16, 0.82);
     }
 
-    #gate-subtitle,
+    #victory-title {
+      margin-top: var(--ui-gap);
+    }
+
     #victory-subtitle {
       margin: 14px 0 0 0;
       max-width: 560px;
-      font-size: 16px;
+      font-size: var(--ui-body-size);
       line-height: 1.8;
-      color: rgba(255, 247, 223, 0.78);
+      color: var(--ui-text-muted);
     }
 
     #victory-screen {
@@ -260,7 +325,6 @@
         radial-gradient(circle at 35% 30%, rgba(116, 242, 206, 0.18), transparent 46%),
         radial-gradient(circle at 70% 75%, rgba(255, 217, 102, 0.16), transparent 50%),
         rgba(0, 0, 0, 0.78);
-      backdrop-filter: blur(10px);
       z-index: 9;
     }
 
@@ -276,9 +340,8 @@
         rgba(255, 107, 94, 0.45),
         rgba(116, 242, 206, 0.0)
       );
-      filter: blur(0.2px);
       animation: victorySpin 2200ms linear infinite;
-      box-shadow: 0 30px 80px rgba(0, 0, 0, 0.65);
+      box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.52);
     }
 
     #victory-core {
@@ -318,19 +381,35 @@
   <div id="app">
     <div id="engine-art-layer" aria-hidden="true"></div>
     <canvas id="game-canvas" width="720" height="1280" aria-label="瞬息全宇宙：逃离贝果"></canvas>
-    <div id="start-screen" class="overlay" role="dialog" aria-label="启动画面">
+    <button id="music-toggle" type="button" aria-label="开启音乐" title="开启音乐" aria-pressed="false" data-state="idle">
+      <svg viewBox="0 0 16 16" aria-hidden="true">
+        <path d="M1 6h3l4-3v10l-4-3H1z"></path>
+        <path class="speaker-waves" d="M10 5h1v1h1v4h-1v1h-1V9h1V7h-1zm2-2h1v1h1v8h-1v1h-1v-2h1V5h-1z"></path>
+        <path class="speaker-muted-mark" d="M10 5h1v1h1V5h2v2h-1v2h1v2h-2v-1h-1v1h-1V9h1V7h-1z"></path>
+      </svg>
+    </button>
+    <div id="start-screen" class="overlay" role="dialog" aria-label="启动画面，点击继续" tabindex="0">
       <div id="opening-art" aria-hidden="true"></div>
-      <h1 id="start-title">瞬息全宇宙</h1>
-      <button id="start-button" type="button">进入</button>
+      <div class="opening-shade" aria-hidden="true"></div>
+      <div class="opening-content">
+        <div class="opening-copy">
+          <p id="start-subtitle">宇宙裂缝已被贝果怪物撕开，向前奔跑，唯一目标是在坍塌彻底失控前逃出生天</p>
+        </div>
+      </div>
     </div>
-    <div id="story-screen" class="overlay" role="dialog" aria-label="情景画面" style="display:none;">
+    <div id="story-screen" class="overlay" role="dialog" aria-label="情景画面，点击继续" tabindex="0" style="display:none;">
       <div id="story-slide" aria-hidden="true"></div>
-      <div id="story-caption">情景画面 1 / 2</div>
+      <div class="opening-shade" aria-hidden="true"></div>
+      <div class="opening-content">
+        <div class="opening-copy">
+          <h2 id="story-title">贝果降临</h2>
+          <p id="story-caption">它悬在星海中俯视一切。吞噬、扭曲、追逐，所有宇宙都被卷进同一场疯狂之中。</p>
+        </div>
+      </div>
     </div>
-    <div id="gate-screen" class="overlay" role="dialog" aria-label="关卡确认" style="display:none;">
-      <h2 id="gate-title">确认开始第1关？</h2>
-      <p id="gate-subtitle">点击确认后进入第1关。</p>
-      <button id="gate-button" type="button">开始第1关</button>
+    <div id="gate-screen" class="overlay" role="dialog" aria-label="教学关卡" style="display:none;">
+      <h2 id="gate-title">教学关卡</h2>
+      <button id="gate-button" type="button">点击进入石头宇宙</button>
     </div>
     <div id="victory-screen" class="overlay" role="dialog" aria-label="通关" style="display:none;">
       <div style="position:relative;width:340px;height:340px;display:grid;place-items:center;">
@@ -373,7 +452,7 @@
       cfg.stuckCheckInterval = 0.9;
       cfg.tutorialUniverse = 'stone';
       cfg.fragmentConcurrent = 7;
-      cfg.skillButtonRadius = 50;
+      cfg.skillButtonRadius = 42;
       cfg.uiEdgePadding = 6;
 
       cfg.tutorialCollapseBaseRate = 0.5;
@@ -786,6 +865,7 @@
         this.collectedTutorial = 0;
         this.skillCooldownLeft = 0;
         this.overlayButton = null;
+        this.overlayHomeButton = null;
         this.player = window.ULEAP_ENTITIES.createPlayer(
           spawn.x,
           spawn.y,
@@ -853,31 +933,6 @@
         return { col: col, row: row };
       }
 
-      function wouldMake2x2Open(grid, row, col) {
-        for (var dr = -1; dr <= 0; dr += 1) {
-          for (var dc = -1; dc <= 0; dc += 1) {
-            var r0 = row + dr;
-            var c0 = col + dc;
-            if (r0 < 0 || c0 < 0 || r0 + 1 >= grid.length || c0 + 1 >= grid[0].length) {
-              continue;
-            }
-            var openCount = 0;
-            for (var rr = r0; rr <= r0 + 1; rr += 1) {
-              for (var cc = c0; cc <= c0 + 1; cc += 1) {
-                var isCandidate = rr === row && cc === col;
-                if (isCandidate || grid[rr][cc] === '0') {
-                  openCount += 1;
-                }
-              }
-            }
-            if (openCount === 4) {
-              return true;
-            }
-          }
-        }
-        return false;
-      }
-
       function makeGrid(rows, cols) {
         var grid = [];
         for (var r = 0; r < rows; r += 1) {
@@ -894,154 +949,66 @@
         grid[row][col] = '0';
       }
 
-      function isOpen(grid, row, col) {
-        return grid[row][col] === '0';
-      }
-
-      function neighbors4(row, col) {
-        return [
-          { row: row - 1, col: col },
-          { row: row + 1, col: col },
-          { row: row, col: col - 1 },
-          { row: row, col: col + 1 }
-        ];
+      function normalizeMazeCell(cell, rows, cols) {
+        var row = clamp(cell && cell.row ? cell.row : 1, 1, rows - 2);
+        var col = clamp(cell && cell.col ? cell.col : 1, 1, cols - 2);
+        if (row % 2 === 0) {
+          row = row + 1 <= rows - 2 ? row + 1 : row - 1;
+        }
+        if (col % 2 === 0) {
+          col = col + 1 <= cols - 2 ? col + 1 : col - 1;
+        }
+        return { row: row, col: col };
       }
 
       function carveRandomMaze(options) {
         var rows = options.rows;
         var cols = options.cols;
-        var anchor = options.anchor;
-        var playerSpawn = options.playerSpawn;
-        var pursuerSpawns = options.pursuerSpawns;
-        var required = options.required;
-        var targetOpen = options.targetOpen;
-
         var grid = makeGrid(rows, cols);
+        var start = normalizeMazeCell(options.anchor || options.playerSpawn, rows, cols);
+        var stack = [start];
+        var visited = {};
+        visited[start.row + ':' + start.col] = true;
+        openCell(grid, start.row, start.col);
 
-        function inInterior(r, c) {
-          return r >= 1 && r <= rows - 2 && c >= 1 && c <= cols - 2;
-        }
+        while (stack.length) {
+          var current = stack[stack.length - 1];
+          var candidates = shuffle([
+            { row: current.row - 2, col: current.col },
+            { row: current.row + 2, col: current.col },
+            { row: current.row, col: current.col - 2 },
+            { row: current.row, col: current.col + 2 }
+          ]);
+          var next = null;
 
-        var requiredCells = [];
-        requiredCells.push({ row: playerSpawn.row, col: playerSpawn.col });
-        for (var i = 0; i < pursuerSpawns.length; i += 1) {
-          requiredCells.push({ row: pursuerSpawns[i].row, col: pursuerSpawns[i].col });
-        }
-        for (var j = 0; j < required.length; j += 1) {
-          requiredCells.push({ row: required[j].row, col: required[j].col });
-        }
-
-        for (var k = 0; k < requiredCells.length; k += 1) {
-          var rc = requiredCells[k];
-          if (inInterior(rc.row, rc.col)) {
-            openCell(grid, rc.row, rc.col);
-          }
-        }
-
-        if (!inInterior(anchor.row, anchor.col)) {
-          anchor = { row: playerSpawn.row, col: playerSpawn.col };
-        }
-        openCell(grid, anchor.row, anchor.col);
-
-        function carveManhattanPath(from, to) {
-          var r = from.row;
-          var c = from.col;
-          openCell(grid, r, c);
-          var guard = 0;
-          while ((r !== to.row || c !== to.col) && guard < 2000) {
-            guard += 1;
-            var moves = [];
-            if (to.row < r) moves.push({ row: r - 1, col: c });
-            if (to.row > r) moves.push({ row: r + 1, col: c });
-            if (to.col < c) moves.push({ row: r, col: c - 1 });
-            if (to.col > c) moves.push({ row: r, col: c + 1 });
-            shuffle(moves);
-            var moved = false;
-            for (var m = 0; m < moves.length; m += 1) {
-              var nr = moves[m].row;
-              var nc = moves[m].col;
-              if (!inInterior(nr, nc)) {
-                continue;
-              }
-              openCell(grid, nr, nc);
-              r = nr;
-              c = nc;
-              moved = true;
-              break;
-            }
-            if (!moved) {
-              var fallback = shuffle(neighbors4(r, c));
-              for (var f = 0; f < fallback.length; f += 1) {
-                var fr = fallback[f].row;
-                var fc = fallback[f].col;
-                if (inInterior(fr, fc)) {
-                  openCell(grid, fr, fc);
-                  r = fr;
-                  c = fc;
-                  moved = true;
-                  break;
-                }
-              }
-            }
-            if (!moved) {
-              break;
-            }
-          }
-        }
-
-        for (var p = 0; p < requiredCells.length; p += 1) {
-          carveManhattanPath(anchor, requiredCells[p]);
-        }
-
-        function countOpenCells() {
-          var count = 0;
-          for (var r0 = 0; r0 < rows; r0 += 1) {
-            for (var c0 = 0; c0 < cols; c0 += 1) {
-              if (grid[r0][c0] === '0') {
-                count += 1;
-              }
-            }
-          }
-          return count;
-        }
-
-        var openCount = countOpenCells();
-        var openList = [];
-        for (var r1 = 1; r1 <= rows - 2; r1 += 1) {
-          for (var c1 = 1; c1 <= cols - 2; c1 += 1) {
-            if (grid[r1][c1] === '0') {
-              openList.push({ row: r1, col: c1 });
-            }
-          }
-        }
-
-        var iterations = 0;
-        while (openCount < targetOpen && iterations < 8000) {
-          iterations += 1;
-          if (!openList.length) {
-            break;
-          }
-          var base = openList[Math.floor(Math.random() * openList.length)];
-          var nbs = shuffle(neighbors4(base.row, base.col));
-          for (var n = 0; n < nbs.length; n += 1) {
-            var rr2 = nbs[n].row;
-            var cc2 = nbs[n].col;
-            if (!inInterior(rr2, cc2) || isOpen(grid, rr2, cc2)) {
+          for (var i = 0; i < candidates.length; i += 1) {
+            var candidate = candidates[i];
+            var key = candidate.row + ':' + candidate.col;
+            if (
+              candidate.row < 1 || candidate.row > rows - 2 ||
+              candidate.col < 1 || candidate.col > cols - 2 ||
+              visited[key]
+            ) {
               continue;
             }
-            if (wouldMake2x2Open(grid, rr2, cc2)) {
-              continue;
-            }
-            openCell(grid, rr2, cc2);
-            openList.push({ row: rr2, col: cc2 });
-            openCount += 1;
+            next = candidate;
+            visited[key] = true;
             break;
           }
+
+          if (!next) {
+            stack.pop();
+            continue;
+          }
+
+          openCell(grid, current.row + (next.row - current.row) / 2, current.col + (next.col - current.col) / 2);
+          openCell(grid, next.row, next.col);
+          stack.push(next);
         }
 
         var result = [];
-        for (var rr3 = 0; rr3 < rows; rr3 += 1) {
-          result.push(grid[rr3].join(''));
+        for (var row = 0; row < rows; row += 1) {
+          result.push(grid[row].join(''));
         }
         return result;
       }
@@ -1106,36 +1073,38 @@
         }
 
         var config = window.ULEAP_CONFIG.GAME_CONFIG || {};
-        var rows = config.mapRows || 16;
-        var cols = config.mapCols || 9;
-        var tileSize = config.tileSize || 80;
+        var rows = config.mapRows || 15;
+        var cols = config.mapCols || 11;
+        var tileSize = config.tileSize || 60;
 
         var playerSpawn = { col: 1, row: 1 };
         var pursuerSpawns = [
           { col: 9, row: 1 },
           { col: 9, row: 13 },
           { col: 1, row: 13 },
-          { col: 6, row: 11 }
+          { col: 5, row: 11 }
         ];
 
-        function buildNewTemplate(anchorTile, requiredTiles) {
+        function buildNewTemplate(anchorTile) {
           var gridLines = carveRandomMaze({
             rows: rows,
             cols: cols,
             anchor: { row: anchorTile.row, col: anchorTile.col },
-            playerSpawn: { row: playerSpawn.row, col: playerSpawn.col },
-            pursuerSpawns: pursuerSpawns.map(function (s) { return { row: s.row, col: s.col }; }),
-            required: requiredTiles || [],
-            targetOpen: 63
+            playerSpawn: { row: playerSpawn.row, col: playerSpawn.col }
           });
 
           return buildTemplate(gridLines, playerSpawn, pursuerSpawns);
         }
 
         function rebuildMazeForGame(game, anchorTile) {
-          var template = buildNewTemplate(anchorTile, []);
+          var safeAnchor = normalizeMazeCell(anchorTile, rows, cols);
+          var template = buildNewTemplate(safeAnchor);
           window.ULEAP_MAPS.mainMaze = template;
           game.map = game.buildMap(template);
+          if (game.player) {
+            game.player.x = (safeAnchor.col + 0.5) * tileSize;
+            game.player.y = (safeAnchor.row + 0.5) * tileSize;
+          }
         }
 
         var proto = window.ULEAP_Game.prototype;
@@ -1170,7 +1139,7 @@
         }
 
         if (window.ULEAP_MAPS && window.ULEAP_MAPS.mainMaze && !window.ULEAP_MAPS.mainMaze.__randomizedForMerge) {
-          var initial = buildNewTemplate({ row: playerSpawn.row, col: playerSpawn.col }, []);
+          var initial = buildNewTemplate({ row: playerSpawn.row, col: playerSpawn.col });
           initial.__randomizedForMerge = true;
           window.ULEAP_MAPS.mainMaze = initial;
         }
@@ -1689,82 +1658,138 @@
       };
 
       Game.prototype.drawHUD = function drawHUD(ctx) {
+        if (this.status !== 'playing') {
+          return;
+        }
         var W = this.config.logicWidth;
         var panelX = 24;
         var panelY = 18;
         var panelW = W - 48;
-        var panelH = 128;
-        var barX = panelX + 12;
-        var barY = panelY + 88;
-        var barW = panelW - 24;
-        var barH = 22;
-        var fillW = barW * (this.collapse / 100);
+        var panelH = 118;
+        var barX = panelX + 162;
+        var barY = panelY + 82;
+        var barW = panelW - 174;
+        var barH = 18;
+        var meterStep = 8;
+        var fillW = Math.floor((barW * (this.collapse / 100)) / meterStep) * meterStep;
+        var meterColor = this.collapse < 35 ? '#5fe08b' : (this.collapse < 70 ? '#f7c44a' : '#ff6b5e');
+        var stageLabel = this.stage === 'tutorial' ? '教学关' : '第2关';
+        var infoLine = this.currentUniverse.label + '  ' + stageLabel +
+          '  时间 ' + window.ULEAP_UTILS.formatSeconds(this.elapsed) +
+          '  碎片 ' + this.collectedTotal +
+          '  贝果 ' + this.pursuers.length;
 
         ctx.save();
-        ctx.fillStyle = 'rgba(0,0,0,0.42)';
+        ctx.imageSmoothingEnabled = false;
+
+        ctx.fillStyle = 'rgba(7, 7, 14, 0.72)';
+        ctx.fillRect(panelX + 4, panelY + 4, panelW, panelH);
+        ctx.fillStyle = 'rgba(14, 15, 25, 0.76)';
         ctx.fillRect(panelX, panelY, panelW, panelH);
-        ctx.strokeStyle = 'rgba(255,255,255,0.10)';
-        ctx.lineWidth = 2;
-        ctx.strokeRect(panelX + 0.5, panelY + 0.5, panelW - 1, panelH - 1);
+        ctx.fillStyle = 'rgba(255,247,223,0.48)';
+        ctx.fillRect(panelX, panelY, panelW, 3);
+        ctx.fillRect(panelX, panelY + panelH - 3, panelW, 3);
+        ctx.fillRect(panelX, panelY, 3, panelH);
+        ctx.fillRect(panelX + panelW - 3, panelY, 3, panelH);
 
         ctx.fillStyle = '#fff7df';
-        ctx.font = 'bold 26px Arial';
-        ctx.fillText(this.config.title, panelX + 12, panelY + 34);
+        ctx.font = 'bold 24px "Courier New", monospace';
+        ctx.fillText(this.config.title, panelX + 12, panelY + 31);
 
-        ctx.font = '20px Arial';
+        ctx.font = '17px "Courier New", monospace';
         ctx.fillStyle = 'rgba(255,247,223,0.92)';
-        ctx.fillText('宇宙：' + this.currentUniverse.label, panelX + 12, panelY + 64);
-        ctx.fillText(this.stage === 'tutorial' ? '关卡：第1关' : '关卡：第2关', panelX + 12, panelY + 88);
-        ctx.fillText('时间：' + window.ULEAP_UTILS.formatSeconds(this.elapsed), panelX + 360, panelY + 64);
-        ctx.fillText('碎片：' + this.collectedTotal, panelX + 360, panelY + 88);
-        ctx.fillText('贝果：' + this.pursuers.length, panelX + 540, panelY + 88);
+        ctx.fillText(infoLine, panelX + 12, panelY + 61);
 
-        ctx.fillStyle = 'rgba(255,255,255,0.14)';
-        ctx.fillRect(barX, barY, barW, barH);
-        ctx.fillStyle = this.collapse < 35 ? '#5fe08b' : (this.collapse < 70 ? '#f7c44a' : '#ff6b5e');
-        ctx.fillRect(barX, barY, fillW, barH);
-        ctx.font = 'bold 18px Arial';
+        ctx.fillStyle = '#090a12';
+        ctx.fillRect(barX - 4, barY - 4, barW + 8, barH + 8);
         ctx.fillStyle = '#fff7df';
-        ctx.fillText('坍塌值 ' + this.collapse.toFixed(1) + '%', barX, barY + 42);
+        ctx.fillRect(barX - 2, barY - 2, barW + 4, barH + 4);
+        ctx.fillStyle = '#252737';
+        ctx.fillRect(barX, barY, barW, barH);
+        ctx.fillStyle = meterColor;
+        ctx.fillRect(barX, barY, fillW, barH);
+        ctx.fillStyle = 'rgba(255,255,255,0.32)';
+        ctx.fillRect(barX, barY, fillW, 4);
+        ctx.fillStyle = 'rgba(7,7,14,0.56)';
+        for (var meterX = barX + meterStep; meterX < barX + barW; meterX += meterStep) {
+          ctx.fillRect(meterX - 1, barY, 2, barH);
+        }
+        ctx.font = 'bold 17px "Courier New", monospace';
+        ctx.fillStyle = '#fff7df';
+        ctx.fillText('坍塌 ' + this.collapse.toFixed(1) + '%', panelX + 12, barY + 16);
         ctx.restore();
       };
 
       Game.prototype.drawSkillButton = function drawSkillButton(ctx) {
+        if (this.status !== 'playing') {
+          return;
+        }
         var skill = this.input.skillButton;
         var W = this.config.logicWidth;
         var H = this.config.logicHeight;
         var radius = skill.radius;
         var pad = 14;
+        skill.radius = radius;
         skill.x = W - pad - radius;
         skill.y = H - pad - radius;
 
         var cooldown = this.stage === 'formal' ? this.config.formalSkillCooldown : 0;
         var enabled = this.stage === 'formal';
         var ratio = enabled && this.skillCooldownLeft > 0 && cooldown > 0 ? this.skillCooldownLeft / cooldown : 0;
+        var activeSegments = enabled ? Math.round((1 - ratio) * 8) : 0;
+        var baseColor = enabled
+          ? (this.skillCooldownLeft > 0 ? 'rgba(255,255,255,0.10)' : 'rgba(255,255,255,0.16)')
+          : 'rgba(255,255,255,0.10)';
 
         ctx.save();
-        ctx.globalAlpha = 0.9;
+        ctx.imageSmoothingEnabled = false;
 
-        ctx.fillStyle = enabled ? (this.skillCooldownLeft > 0 ? 'rgba(130,130,130,0.65)' : this.currentUniverse.accent) : 'rgba(90,90,90,0.55)';
+        ctx.fillStyle = 'rgba(5,5,16,0.58)';
         ctx.beginPath();
-        ctx.arc(skill.x, skill.y, skill.radius, 0, Math.PI * 2);
+        ctx.arc(skill.x + 3, skill.y + 3, radius, 0, Math.PI * 2);
         ctx.fill();
 
-        ctx.strokeStyle = 'rgba(255,255,255,0.85)';
-        ctx.lineWidth = 7;
+        ctx.fillStyle = 'rgba(255,255,255,0.13)';
         ctx.beginPath();
-        ctx.arc(skill.x, skill.y, skill.radius - 10, -Math.PI * 0.5, -Math.PI * 0.5 + Math.PI * 2 * (1 - ratio));
+        ctx.arc(skill.x, skill.y, radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(255,255,255,0.78)';
+        ctx.lineWidth = 2;
         ctx.stroke();
 
-        ctx.fillStyle = '#111';
-        ctx.font = 'bold 20px Arial';
+        ctx.fillStyle = baseColor;
+        ctx.beginPath();
+        ctx.arc(skill.x, skill.y, radius - 4, 0, Math.PI * 2);
+        ctx.fill();
+
+        for (var segment = 0; segment < 8; segment += 1) {
+          var angle = -Math.PI * 0.5 + segment * Math.PI * 0.25;
+          var segmentX = Math.round(skill.x + Math.cos(angle) * (radius - 5) - 4);
+          var segmentY = Math.round(skill.y + Math.sin(angle) * (radius - 5) - 4);
+          ctx.fillStyle = segment < activeSegments ? '#77d6ff' : 'rgba(255,247,223,0.28)';
+          ctx.fillRect(segmentX, segmentY, 8, 8);
+        }
+
+        var portalY = skill.y - 18;
+        ctx.fillStyle = enabled ? '#fff7df' : '#a9a9ad';
+        ctx.fillRect(skill.x - 4, portalY - 12, 8, 4);
+        ctx.fillRect(skill.x - 12, portalY - 8, 8, 4);
+        ctx.fillRect(skill.x + 4, portalY - 8, 8, 4);
+        ctx.fillRect(skill.x - 16, portalY - 4, 8, 12);
+        ctx.fillRect(skill.x + 8, portalY - 4, 8, 12);
+        ctx.fillRect(skill.x - 12, portalY + 8, 8, 4);
+        ctx.fillRect(skill.x + 4, portalY + 8, 8, 4);
+        ctx.fillRect(skill.x - 4, portalY + 12, 8, 4);
+
+        ctx.fillStyle = '#fff7df';
+        ctx.font = 'bold 16px "Courier New", monospace';
         ctx.textAlign = 'center';
-        ctx.fillText('跃迁', skill.x, skill.y - 3);
-        ctx.font = '16px Arial';
+        ctx.fillText('跃迁', skill.x, skill.y + 13);
+        ctx.font = '12px "Courier New", monospace';
         if (!enabled) {
-          ctx.fillText('禁用', skill.x, skill.y + 22);
+          ctx.fillText('禁用', skill.x, skill.y + 32);
         } else {
-          ctx.fillText(this.skillCooldownLeft > 0 ? this.skillCooldownLeft.toFixed(1) + 's' : '就绪', skill.x, skill.y + 22);
+          ctx.fillText(this.skillCooldownLeft > 0 ? this.skillCooldownLeft.toFixed(1) + 's' : '就绪', skill.x, skill.y + 32);
         }
         ctx.textAlign = 'left';
         ctx.restore();
@@ -2067,13 +2092,25 @@
   </script>
   <script>
     window.ULEAP_ENGINE = {
-      storyDurationMs: 2000,
+      storyDurationMs: 0,
       opening: {
         backgroundImage: 'assets/art/engine/opening.jpg'
       },
-      storySlides: []
+      storySlides: [
+        {
+          title: '贝果降临',
+          caption: '它悬在星海中俯视一切。吞噬、扭曲、追逐，所有宇宙都被卷进同一场疯狂之中。',
+          image: 'assets/art/engine/story1.jpg'
+        },
+        {
+          title: '追逐开始',
+          caption: '你已经没有退路。穿过星尘与涡流，继续向前，直到真正的游戏开始。',
+          image: 'assets/art/engine/story2.jpg'
+        }
+      ]
     };
   </script>
+  <script src="assets/audio/escape_bagel_theme.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>

@@ -21,6 +21,7 @@
     this.running = false;
     this.toast = null;
     this.overlayButton = null;
+    this.overlayHomeButton = null;
     this.overlayAction = null;
     this._bindOverlayInput();
     this.reset();
@@ -31,11 +32,21 @@
     this.canvas.addEventListener('pointerup', function onPointerUp(event) {
       try {
         var pos;
-        if (!self.overlayButton) {
-          return;
-        }
         pos = self.getCanvasPoint(event);
         if (!pos) {
+          return;
+        }
+        if (
+          self.overlayHomeButton &&
+          pos.x >= self.overlayHomeButton.x &&
+          pos.x <= self.overlayHomeButton.x + self.overlayHomeButton.w &&
+          pos.y >= self.overlayHomeButton.y &&
+          pos.y <= self.overlayHomeButton.y + self.overlayHomeButton.h
+        ) {
+          global.location.reload();
+          return;
+        }
+        if (!self.overlayButton) {
           return;
         }
         if (
@@ -108,6 +119,7 @@
     this.collectedTutorial = 0;
     this.skillCooldownLeft = 0;
     this.overlayButton = null;
+    this.overlayHomeButton = null;
     this.overlayAction = null;
     this.player = entities.createPlayer(
       spawn.x,
@@ -334,6 +346,7 @@
     this.collectedTutorial = 0;
     this.skillCooldownLeft = 0;
     this.overlayButton = null;
+    this.overlayHomeButton = null;
     this.player = entities.createPlayer(
       spawn.x,
       spawn.y,
@@ -588,10 +601,10 @@
     ctx.fillRect(24, 18, this.config.logicWidth - 48, 144);
 
     ctx.fillStyle = '#fff7df';
-    ctx.font = 'bold 28px Arial';
+    ctx.font = 'bold 28px "Courier New", monospace';
     ctx.fillText(this.config.title, 36, 54);
 
-    ctx.font = '22px Arial';
+    ctx.font = '22px "Courier New", monospace';
     ctx.fillText('宇宙：' + this.currentUniverse.label, 36, 92);
     ctx.fillText(this.stage === 'tutorial' ? '关卡：第1关' : '关卡：第2关', 36, 122);
     ctx.fillText('时间：' + utils.formatSeconds(this.elapsed), 470, 92);
@@ -602,12 +615,12 @@
     ctx.fillStyle = this.collapse < 35 ? '#5fe08b' : (this.collapse < 70 ? '#f7c44a' : '#ff6b5e');
     ctx.fillRect(barX, barY + 82, fillW, barH);
 
-    ctx.font = 'bold 22px Arial';
+    ctx.font = 'bold 22px "Courier New", monospace';
     ctx.fillStyle = '#fff7df';
     ctx.fillText('坍塌值 ' + this.collapse.toFixed(1) + '%', 36, barY + 104);
 
     if (this.stage === 'tutorial') {
-      ctx.font = '20px Arial';
+      ctx.font = '20px "Courier New", monospace';
       ctx.fillStyle = '#fff7df';
       ctx.fillText('第1关目标：将坍塌值降至 0%', 36, 170);
     }
@@ -632,24 +645,24 @@
     ctx.stroke();
 
     ctx.fillStyle = '#111';
-    ctx.font = 'bold 24px Arial';
+    ctx.font = 'bold 24px "Courier New", monospace';
     ctx.textAlign = 'center';
     ctx.fillText('跃迁', skill.x, skill.y - 4);
-    ctx.font = '18px Arial';
+    ctx.font = '18px "Courier New", monospace';
     ctx.fillText(this.skillCooldownLeft > 0 ? this.skillCooldownLeft.toFixed(1) + 's' : '就绪', skill.x, skill.y + 28);
     ctx.textAlign = 'left';
     ctx.restore();
   };
 
   UniverseLeapGame.prototype.drawToast = function drawToast(ctx) {
-    if (!this.toast) {
+    if (!this.toast || this.status !== 'playing') {
       return;
     }
     ctx.save();
     ctx.fillStyle = 'rgba(0,0,0,0.6)';
     ctx.fillRect(76, this.config.logicHeight - 270, this.config.logicWidth - 152, 74);
     ctx.fillStyle = '#fff7df';
-    ctx.font = '22px Arial';
+    ctx.font = '22px "Courier New", monospace';
     ctx.textAlign = 'center';
     ctx.fillText(this.toast.text, this.config.logicWidth * 0.5, this.config.logicHeight - 225);
     ctx.textAlign = 'left';
@@ -657,60 +670,133 @@
   };
 
   UniverseLeapGame.prototype.drawEndState = function drawEndState(ctx) {
+    function roundedRectPath(context, button, radius) {
+      var x = button.x;
+      var y = button.y;
+      var w = button.w;
+      var h = button.h;
+      var r = Math.min(radius, w * 0.5, h * 0.5);
+      context.beginPath();
+      context.moveTo(x + r, y);
+      context.lineTo(x + w - r, y);
+      context.quadraticCurveTo(x + w, y, x + w, y + r);
+      context.lineTo(x + w, y + h - r);
+      context.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+      context.lineTo(x + r, y + h);
+      context.quadraticCurveTo(x, y + h, x, y + h - r);
+      context.lineTo(x, y + r);
+      context.quadraticCurveTo(x, y, x + r, y);
+      context.closePath();
+    }
+
+    function drawTranslucentButton(context, button, label) {
+      var shadowButton = {
+        x: button.x + 3,
+        y: button.y + 3,
+        w: button.w,
+        h: button.h
+      };
+      context.save();
+      context.fillStyle = 'rgba(5,5,16,0.58)';
+      roundedRectPath(context, shadowButton, shadowButton.h * 0.5);
+      context.fill();
+      context.restore();
+
+      context.fillStyle = 'rgba(255,255,255,0.13)';
+      roundedRectPath(context, button, button.h * 0.5);
+      context.fill();
+      context.strokeStyle = 'rgba(255,255,255,0.78)';
+      context.lineWidth = 2;
+      context.stroke();
+
+      context.fillStyle = '#fff7df';
+      context.font = 'bold 16px "Courier New", monospace';
+      context.textAlign = 'center';
+      context.fillText(label, button.x + button.w * 0.5, button.y + button.h * 0.5 + 6);
+    }
+
     if (this.status === 'playing') {
       this.overlayButton = null;
+      this.overlayHomeButton = null;
       this.overlayAction = null;
       return;
     }
 
     if (this.stage === 'tutorial' && this.status === 'win') {
       this.overlayButton = {
-        x: 170,
-        y: 820,
-        w: 380,
-        h: 92
+        x: 230,
+        y: 598,
+        w: 260,
+        h: 56
+      };
+      this.overlayHomeButton = {
+        x: 24,
+        y: this.config.logicHeight - 78,
+        w: 150,
+        h: 54
       };
       this.overlayAction = 'enterLevel2';
 
       ctx.save();
-      ctx.fillStyle = 'rgba(0,0,0,0.72)';
+      ctx.fillStyle = 'rgba(3,4,10,0.86)';
       ctx.fillRect(0, 0, this.config.logicWidth, this.config.logicHeight);
 
       ctx.fillStyle = '#fff7df';
       ctx.textAlign = 'center';
-      ctx.font = 'bold 46px Arial';
-      ctx.fillText('第1关完成', this.config.logicWidth * 0.5, 360);
+      ctx.font = 'bold 34px "Courier New", monospace';
+      ctx.fillText('教学关通关', this.config.logicWidth * 0.5, 560);
 
-      ctx.font = '28px Arial';
-      ctx.fillText('坍塌值已降至 0%。', this.config.logicWidth * 0.5, 445);
-      ctx.fillText('是否确认进入第2关？', this.config.logicWidth * 0.5, 490);
+      drawTranslucentButton(ctx, this.overlayButton, '进入正式关');
 
-      ctx.fillStyle = this.currentUniverse.accent;
-      ctx.fillRect(this.overlayButton.x, this.overlayButton.y, this.overlayButton.w, this.overlayButton.h);
-      ctx.fillStyle = '#111';
-      ctx.font = 'bold 30px Arial';
-      ctx.fillText('进入第2关', this.config.logicWidth * 0.5, 878);
+      ctx.textAlign = 'left';
+      ctx.fillStyle = 'rgba(255,247,223,0.92)';
+      ctx.font = 'bold 16px "Courier New", monospace';
+      ctx.fillText('返回首页', this.overlayHomeButton.x + 12, this.overlayHomeButton.y + 36);
+      ctx.fillStyle = 'rgba(255,247,223,0.54)';
+      ctx.fillRect(this.overlayHomeButton.x, this.overlayHomeButton.y + 48, 112, 2);
+      ctx.textAlign = 'left';
+      ctx.restore();
+      return;
+    }
 
-      ctx.fillStyle = 'rgba(255,247,223,0.78)';
-      ctx.font = '22px Arial';
-      ctx.fillText('或点击右下角技能键重新开始', this.config.logicWidth * 0.5, 960);
+    if (this.status === 'lose') {
+      this.overlayButton = null;
+      this.overlayHomeButton = {
+        x: 230,
+        y: 598,
+        w: 260,
+        h: 56
+      };
+      this.overlayAction = null;
+
+      ctx.save();
+      ctx.fillStyle = 'rgba(3,4,10,0.88)';
+      ctx.fillRect(0, 0, this.config.logicWidth, this.config.logicHeight);
+      ctx.fillStyle = '#fff7df';
+      ctx.textAlign = 'center';
+      ctx.font = 'bold 34px "Courier New", monospace';
+      ctx.fillText('坍塌失控！！！', this.config.logicWidth * 0.5, 520);
+      ctx.font = '16px "Courier New", monospace';
+      ctx.fillText('坍塌值达到100%', this.config.logicWidth * 0.5, 560);
+      drawTranslucentButton(ctx, this.overlayHomeButton, '返回首页');
       ctx.textAlign = 'left';
       ctx.restore();
       return;
     }
 
     this.overlayButton = null;
+    this.overlayHomeButton = null;
     this.overlayAction = null;
     ctx.save();
     ctx.fillStyle = 'rgba(0,0,0,0.64)';
     ctx.fillRect(0, 0, this.config.logicWidth, this.config.logicHeight);
     ctx.fillStyle = '#fff7df';
     ctx.textAlign = 'center';
-    ctx.font = 'bold 48px Arial';
-    ctx.fillText(this.status === 'win' ? '逃离成功' : '坍塌失控', this.config.logicWidth * 0.5, 520);
-    ctx.font = '28px Arial';
+    ctx.font = 'bold 34px "Courier New", monospace';
+    ctx.fillText(this.status === 'win' ? '逃离成功' : '坍塌失控', this.config.logicWidth * 0.5, 540);
+    ctx.font = '16px "Courier New", monospace';
     ctx.fillText(this.status === 'win' ? '坍塌值降至 0%' : '坍塌值已达到 100%', this.config.logicWidth * 0.5, 580);
-    ctx.fillText('点击右下角技能键重新开始', this.config.logicWidth * 0.5, 640);
+    ctx.fillText('点击右下角技能键重新开始', this.config.logicWidth * 0.5, 620);
     ctx.textAlign = 'left';
     ctx.restore();
   };
