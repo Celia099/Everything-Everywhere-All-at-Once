@@ -1,0 +1,8 @@
+{
+  "name": "escape_bagel_theme",
+  "type": "procedural_bgm",
+  "entry": "escape_bagel_theme.js",
+  "preview": "preview.html",
+  "mode": "offline_web_audio",
+  "description": "太空追逐感的 8-bit / synthwave 循环 BGM，适合《逃离贝果》开场和追逐氛围。"
+}

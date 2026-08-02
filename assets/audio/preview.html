@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="format-detection" content="telephone=no">
+  <title>逃离贝果 - 音乐素材预览</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      min-height: 100%;
+      background: radial-gradient(circle at top, #22164f 0%, #0e1023 52%, #06070f 100%);
+      color: #f7f0df;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .panel {
+      width: min(92vw, 520px);
+      padding: 28px;
+      border-radius: 24px;
+      background: rgba(12, 14, 28, 0.72);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+      backdrop-filter: blur(12px);
+    }
+
+    h1 {
+      margin: 0 0 10px;
+      font-size: 30px;
+      line-height: 1.2;
+    }
+
+    .sub {
+      margin: 0 0 18px;
+      color: #cbc9e8;
+      line-height: 1.7;
+      font-size: 15px;
+    }
+
+    .meta {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 22px;
+    }
+
+    .meta-card {
+      padding: 14px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .meta-label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 12px;
+      color: #9db3ff;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .meta-value {
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 18px;
+    }
+
+    button {
+      appearance: none;
+      border: 0;
+      border-radius: 999px;
+      padding: 14px 18px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .primary {
+      color: #fff;
+      background: linear-gradient(135deg, #ff79eb, #7c86ff);
+      box-shadow: 0 10px 22px rgba(140, 102, 255, 0.28);
+    }
+
+    .secondary {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
+    .status {
+      padding: 14px 16px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.05);
+      color: #d7dbf4;
+      line-height: 1.6;
+      min-height: 76px;
+    }
+
+    code {
+      color: #8ed8ff;
+    }
+  </style>
+</head>
+<body>
+  <div class="panel">
+    <h1>逃离贝果 音乐素材</h1>
+    <p class="sub">这是当前分支新增的纯离线程序化 BGM。点击播放后会循环一段偏太空追逐、像素冒险感的合成器音乐，不依赖任何外部音频文件。</p>
+
+    <div class="meta">
+      <div class="meta-card">
+        <span class="meta-label">风格</span>
+        <span class="meta-value">8-bit + Synthwave</span>
+      </div>
+      <div class="meta-card">
+        <span class="meta-label">速度</span>
+        <span class="meta-value">132 BPM</span>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="primary" id="play-btn">播放音乐</button>
+      <button class="secondary" id="stop-btn">停止音乐</button>
+    </div>
+
+    <div class="status" id="status">
+      状态：待启动。<br>
+      提示：浏览器对 <code>file://</code> 本地音频有用户手势限制，第一次需要点击“播放音乐”。
+    </div>
+  </div>
+
+  <script src="escape_bagel_theme.js"></script>
+  <script>
+    (function () {
+      'use strict';
+
+      try {
+        var player = window.ULEAP_Audio.createEscapeBagelThemePlayer();
+        var playBtn = document.getElementById('play-btn');
+        var stopBtn = document.getElementById('stop-btn');
+        var status = document.getElementById('status');
+
+        playBtn.addEventListener('click', function () {
+          player.start().then(function () {
+            status.innerHTML = '状态：播放中。<br>循环：16 步追逐主题已经启动，可保持后台循环试听。';
+          }).catch(function (error) {
+            console.error(error);
+            status.innerHTML = '状态：启动失败。<br>请重新点击播放，或更换支持 Web Audio 的浏览器试试。';
+          });
+        });
+
+        stopBtn.addEventListener('click', function () {
+          player.stop();
+          status.innerHTML = '状态：已停止。<br>你可以再次点击“播放音乐”重新开始循环。';
+        });
+      } catch (error) {
+        console.error(error);
+      }
+    })();
+  </script>
+</body>
+</html>

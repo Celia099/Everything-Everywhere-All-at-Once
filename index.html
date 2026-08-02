@@ -1,23 +1,15 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
-  <title>预览台 - 瞬息全宇宙：逃离贝果</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+  <meta name="format-detection" content="telephone=no">
+  <title>瞬息全宇宙：逃离贝果</title>
   <style>
-    :root {
-      color-scheme: dark;
-      --bg: #050814;
-      --panel: rgba(10, 15, 37, 0.86);
-      --line: rgba(111, 206, 255, 0.22);
-      --text: rgba(245, 247, 255, 0.92);
-      --muted: rgba(245, 247, 255, 0.62);
-      --accent: #74f2ce;
-      --accent-2: #ffbf69;
-    }
-
     * {
       box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
     }
 
     html,
@@ -25,280 +17,2063 @@
       margin: 0;
       width: 100%;
       height: 100%;
-      background:
-        radial-gradient(circle at 20% 20%, rgba(31, 66, 146, 0.24), transparent 30%),
-        radial-gradient(circle at 80% 18%, rgba(52, 115, 119, 0.18), transparent 24%),
-        radial-gradient(circle at 50% 120%, rgba(139, 48, 84, 0.14), transparent 38%),
-        var(--bg);
-      color: var(--text);
-      font-family: "SF Pro Display", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
       overflow: hidden;
+      background: #090909;
+      font-family: Arial, Helvetica, sans-serif;
+      color: #fff7df;
+      touch-action: none;
     }
 
     body {
-      padding:
-        env(safe-area-inset-top, 0)
-        env(safe-area-inset-right, 0)
-        env(safe-area-inset-bottom, 0)
-        env(safe-area-inset-left, 0);
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
-    .shell {
-      position: fixed;
+    #app {
+      position: relative;
+      width: min(100vw, calc(100vh * 0.5625));
+      height: min(100vh, calc(100vw / 0.5625));
+      max-width: 720px;
+      max-height: 1280px;
+      overflow: hidden;
+      background: #111;
+    }
+
+    #engine-art-layer {
+      position: absolute;
       inset: 0;
-      display: grid;
-      grid-template-rows: auto 1fr;
-      gap: 12px;
-      padding: 14px;
+      z-index: 1;
+      background-color: #05050a;
+      background-repeat: no-repeat;
+      background-position: center;
+      background-size: contain;
+      opacity: 1;
+      transform: scale(1);
+      pointer-events: none;
     }
 
-    .topbar {
-      display: flex;
+    #engine-art-layer.engine-art--zoom {
+      animation: storyZoom 2000ms ease forwards;
+    }
+
+    #game-canvas {
+      display: block;
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      background: transparent;
+      touch-action: none;
+      z-index: 2;
+      opacity: 0;
+      transition: opacity 240ms ease;
+    }
+
+    #fatal-error {
+      position: absolute;
+      inset: 0;
+      display: none;
       align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      padding: 12px 14px;
-      border: 1px solid var(--line);
-      background: linear-gradient(180deg, rgba(10, 15, 37, 0.92), var(--panel));
-      backdrop-filter: blur(10px);
+      justify-content: center;
+      padding: 32px;
+      text-align: center;
+      background: rgba(0, 0, 0, 0.86);
+      color: #fff7df;
+      font-size: 28px;
+      line-height: 1.5;
+      z-index: 10;
     }
 
-    .brand {
-      display: grid;
-      gap: 2px;
-      min-width: 0;
+    .overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 36px 28px;
+      text-align: center;
+      opacity: 0;
+      transform: translateY(10px);
+      pointer-events: none;
+      transition: opacity 420ms ease, transform 420ms ease;
     }
 
-    .brand__title {
-      font-weight: 700;
+    .overlay.overlay--show {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+
+    .overlay.overlay--hide {
+      opacity: 0;
+      transform: translateY(-10px);
+      pointer-events: none;
+    }
+
+    #start-screen {
+      background: transparent;
+      z-index: 9;
+    }
+
+    #opening-art {
+      display: none;
+      position: absolute;
+      inset: 0;
+      background-color: #05050a;
+      background-image: url('assets/art/backgrounds/bg_universe_stone.png');
+      background-repeat: no-repeat;
+      background-position: center;
+      background-size: cover;
+      transform: scale(1);
+      animation: openingZoom 6400ms ease-in-out infinite alternate;
+      z-index: 0;
+    }
+
+    #opening-art::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(circle at 50% 30%, rgba(0,0,0,0.28), rgba(0,0,0,0.82) 70%),
+        rgba(0,0,0,0.24);
+    }
+
+    #start-screen > * {
+      position: relative;
+      z-index: 1;
+    }
+
+    #start-title {
+      margin: 0;
+      font-size: 40px;
+      letter-spacing: 0.08em;
+      color: rgba(255, 247, 223, 0.96);
+      text-shadow: 0 10px 40px rgba(0, 0, 0, 0.7);
+    }
+
+    #start-subtitle {
+      margin: 14px 0 0 0;
+      max-width: 560px;
       font-size: 16px;
-      letter-spacing: 0.06em;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      line-height: 1.8;
+      color: rgba(255, 247, 223, 0.78);
     }
 
-    .brand__hint {
-      font-size: 12px;
-      color: var(--muted);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .actions {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      flex-wrap: wrap;
-      justify-content: flex-end;
-    }
-
-    .btn {
+    #start-button,
+    #gate-button,
+    #victory-button {
+      margin-top: 22px;
       appearance: none;
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      background: rgba(255, 255, 255, 0.06);
-      color: var(--text);
-      border-radius: 12px;
-      padding: 10px 12px;
-      font-size: 13px;
-      font-weight: 600;
+      border: 2px solid rgba(255, 217, 102, 0.7);
+      background: rgba(255, 217, 102, 0.14);
+      color: rgba(255, 247, 223, 0.96);
+      border-radius: 16px;
+      padding: 14px 18px;
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
       cursor: pointer;
-      transition: transform 0.12s ease, background 0.18s ease, border-color 0.18s ease;
-      user-select: none;
-      touch-action: manipulation;
+      box-shadow: 0 18px 40px rgba(0, 0, 0, 0.55);
     }
 
-    .btn:active {
+    #start-button:active,
+    #gate-button:active,
+    #victory-button:active {
       transform: translateY(1px);
     }
 
-    .btn--accent {
-      border-color: rgba(116, 242, 206, 0.34);
-      background: rgba(116, 242, 206, 0.12);
+    #gate-button:disabled {
+      opacity: 0.6;
+      cursor: default;
     }
 
-    .btn--accent2 {
-      border-color: rgba(255, 191, 105, 0.34);
-      background: rgba(255, 191, 105, 0.12);
+    #story-screen {
+      padding: 0;
+      background: transparent;
+      z-index: 9;
     }
 
-    .grid {
-      display: grid;
-      gap: 12px;
-      grid-template-columns: 1fr;
-      min-height: 0;
-    }
-
-    .panel {
-      border: 1px solid var(--line);
-      background: rgba(10, 15, 37, 0.52);
-      backdrop-filter: blur(8px);
-      display: grid;
-      grid-template-rows: auto 1fr;
-      min-height: 0;
-      overflow: hidden;
-    }
-
-    .panel__head {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-      padding: 10px 12px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-    }
-
-    .panel__title {
-      font-weight: 700;
-      font-size: 13px;
-      letter-spacing: 0.16em;
-      text-transform: uppercase;
-      color: rgba(245, 247, 255, 0.86);
-    }
-
-    .panel__meta {
-      color: var(--muted);
-      font-size: 12px;
-      white-space: nowrap;
-    }
-
-    .stage {
+    #story-slide {
+      display: none;
+      position: absolute;
+      inset: 0;
       display: grid;
       place-items: center;
-      padding: 10px;
-      min-height: 0;
+      background:
+        radial-gradient(circle at 25% 25%, rgba(116, 242, 206, 0.14), transparent 38%),
+        radial-gradient(circle at 70% 80%, rgba(255, 191, 105, 0.12), transparent 44%),
+        #04050a;
+      transform: scale(1);
+      background-size: cover;
+      background-position: center;
     }
 
-    .frame-wrap {
-      width: min(100%, calc(100vh * 0.5625));
-      height: min(100%, calc(100vw / 0.5625));
-      max-width: 720px;
-      max-height: 1280px;
-      border-radius: 22px;
-      overflow: hidden;
-      box-shadow:
-        0 22px 70px rgba(0, 0, 0, 0.52),
-        0 0 0 1px rgba(255, 255, 255, 0.06) inset;
-      background: #0b0f24;
+    #story-slide.story-slide--play {
+      animation: storyZoom 3200ms ease forwards;
     }
 
-    iframe {
-      width: 100%;
-      height: 100%;
-      border: 0;
-      display: block;
-      background: #070a18;
-    }
-
-    .notice {
-      margin-left: 10px;
-      padding: 8px 10px;
-      border: 1px solid rgba(255, 191, 105, 0.26);
-      background: rgba(255, 191, 105, 0.1);
+    #story-caption {
+      position: relative;
+      z-index: 1;
+      padding: 18px 20px;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 18px;
+      background: rgba(0, 0, 0, 0.38);
       color: rgba(255, 247, 223, 0.92);
-      border-radius: 12px;
-      font-size: 12px;
-      display: none;
+      font-size: 18px;
+      letter-spacing: 0.06em;
+      min-width: min(520px, calc(100% - 56px));
     }
 
-    .notice--show {
-      display: inline-flex;
-      align-items: center;
+    #gate-screen {
+      background:
+        radial-gradient(circle at 40% 30%, rgba(255, 217, 102, 0.12), transparent 42%),
+        radial-gradient(circle at 70% 75%, rgba(116, 242, 206, 0.1), transparent 46%),
+        rgba(0, 0, 0, 0.72);
+      backdrop-filter: blur(8px);
+      z-index: 9;
     }
 
-    @media (max-width: 980px) {
-      .shell {
-        padding: 12px;
-      }
+    #gate-title,
+    #victory-title {
+      margin: 0;
+      font-size: 34px;
+      letter-spacing: 0.08em;
+      color: rgba(255, 247, 223, 0.96);
+      text-shadow: 0 10px 40px rgba(0, 0, 0, 0.7);
+    }
 
-      .grid {
-        grid-template-columns: 1fr;
-      }
+    #gate-subtitle,
+    #victory-subtitle {
+      margin: 14px 0 0 0;
+      max-width: 560px;
+      font-size: 16px;
+      line-height: 1.8;
+      color: rgba(255, 247, 223, 0.78);
+    }
 
-      .frame-wrap {
-        max-width: 540px;
-        max-height: 960px;
-      }
+    #victory-screen {
+      background:
+        radial-gradient(circle at 35% 30%, rgba(116, 242, 206, 0.18), transparent 46%),
+        radial-gradient(circle at 70% 75%, rgba(255, 217, 102, 0.16), transparent 50%),
+        rgba(0, 0, 0, 0.78);
+      backdrop-filter: blur(10px);
+      z-index: 9;
+    }
+
+    #victory-ring {
+      width: 340px;
+      height: 340px;
+      border-radius: 999px;
+      background: conic-gradient(
+        from 0deg,
+        rgba(116, 242, 206, 0.0),
+        rgba(116, 242, 206, 0.55),
+        rgba(255, 217, 102, 0.55),
+        rgba(255, 107, 94, 0.45),
+        rgba(116, 242, 206, 0.0)
+      );
+      filter: blur(0.2px);
+      animation: victorySpin 2200ms linear infinite;
+      box-shadow: 0 30px 80px rgba(0, 0, 0, 0.65);
+    }
+
+    #victory-core {
+      position: absolute;
+      width: 240px;
+      height: 240px;
+      border-radius: 999px;
+      background: radial-gradient(circle at 40% 35%, rgba(255, 247, 223, 0.12), rgba(0, 0, 0, 0));
+      box-shadow:
+        0 0 0 1px rgba(255, 255, 255, 0.08) inset,
+        0 0 0 22px rgba(0, 0, 0, 0.22) inset;
+      animation: victoryPulse 1400ms ease-in-out infinite;
+    }
+
+    @keyframes storyZoom {
+      0% { transform: scale(1); }
+      100% { transform: scale(1.06); }
+    }
+
+    @keyframes openingZoom {
+      0% { transform: scale(1); }
+      100% { transform: scale(1.05); }
+    }
+
+    @keyframes victorySpin {
+      to { transform: rotate(360deg); }
+    }
+
+    @keyframes victoryPulse {
+      0% { transform: scale(0.98); opacity: 0.85; }
+      50% { transform: scale(1.02); opacity: 1; }
+      100% { transform: scale(0.98); opacity: 0.85; }
     }
   </style>
 </head>
 <body>
-  <div class="shell">
-    <div class="topbar">
-      <div class="brand">
-        <div class="brand__title">预览台（Index + Engine + Play）</div>
-        <div class="brand__hint" id="hint">Index 仅做导航预览：Engine 启动后会自动载入 Play</div>
-      </div>
-      <div class="actions">
-        <button class="btn btn--accent" id="reload">刷新页面</button>
-        <button class="btn" id="swap">切换布局</button>
-        <button class="btn btn--accent2" id="open-engine">新标签打开 Engine</button>
-        <button class="btn btn--accent2" id="open-play">新标签打开 Play</button>
-        <span class="notice" id="notice">建议使用本地服务预览（file:// 模式可能有差异）</span>
-      </div>
+  <div id="app">
+    <div id="engine-art-layer" aria-hidden="true"></div>
+    <canvas id="game-canvas" width="720" height="1280" aria-label="瞬息全宇宙：逃离贝果"></canvas>
+    <div id="start-screen" class="overlay" role="dialog" aria-label="启动画面">
+      <div id="opening-art" aria-hidden="true"></div>
+      <h1 id="start-title">瞬息全宇宙</h1>
+      <button id="start-button" type="button">进入</button>
     </div>
-
-    <div class="grid" id="grid">
-      <section class="panel">
-        <header class="panel__head">
-          <div class="panel__title">Engine</div>
-          <div class="panel__meta">engine.html</div>
-        </header>
-        <div class="stage">
-          <div class="frame-wrap">
-            <div style="width:100%;height:100%;display:grid;place-items:center;padding:22px;background:linear-gradient(180deg, rgba(12, 18, 46, 0.72), rgba(10, 15, 37, 0.42));">
-              <div style="max-width:420px;text-align:center;">
-                <div style="font-weight:800;font-size:18px;letter-spacing:0.12em;text-transform:uppercase;color:rgba(245,247,255,0.9);">Engine 入口</div>
-                <div style="margin-top:10px;font-size:13px;line-height:1.7;color:rgba(245,247,255,0.68);">程序启动入口为 engine.html。引擎初始化完成后，会自动跳转加载 play.html 关卡内容。</div>
-                <div style="margin-top:14px;display:inline-flex;gap:10px;flex-wrap:wrap;justify-content:center;">
-                  <button class="btn btn--accent2" type="button" id="open-engine-inline">打开 Engine（链式进入 Play）</button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+    <div id="story-screen" class="overlay" role="dialog" aria-label="情景画面" style="display:none;">
+      <div id="story-slide" aria-hidden="true"></div>
+      <div id="story-caption">情景画面 1 / 2</div>
     </div>
+    <div id="gate-screen" class="overlay" role="dialog" aria-label="关卡确认" style="display:none;">
+      <h2 id="gate-title">确认开始第1关？</h2>
+      <p id="gate-subtitle">点击确认后进入第1关。</p>
+      <button id="gate-button" type="button">开始第1关</button>
+    </div>
+    <div id="victory-screen" class="overlay" role="dialog" aria-label="通关" style="display:none;">
+      <div style="position:relative;width:340px;height:340px;display:grid;place-items:center;">
+        <div id="victory-ring" aria-hidden="true"></div>
+        <div id="victory-core" aria-hidden="true"></div>
+      </div>
+      <h2 id="victory-title">通关</h2>
+      <p id="victory-subtitle">第2关已完成。返回启动页可以再次观看情景画面。</p>
+      <button id="victory-button" type="button">返回启动页</button>
+    </div>
+    <div id="fatal-error">哎呀，出错了，请重启试试吧~</div>
   </div>
 
+  <script src="js/levels/universeParams.js"></script>
   <script>
-    (function () {
-      var grid = document.getElementById("grid");
-      var notice = document.getElementById("notice");
+    (function enforceNumberPlanConfigForMerge() {
+      'use strict';
 
-      function reloadAll() {
-        window.location.reload();
+      if (!window.ULEAP_CONFIG || !window.ULEAP_CONFIG.GAME_CONFIG || !window.ULEAP_CONFIG.UNIVERSES) {
+        return;
       }
 
-      document.getElementById("reload").addEventListener("click", reloadAll);
+      var cfg = window.ULEAP_CONFIG.GAME_CONFIG;
+      cfg.logicWidth = 720;
+      cfg.logicHeight = 1280;
+      cfg.mapCols = 11;
+      cfg.mapRows = 15;
+      cfg.tileSize = 60;
+      cfg.playerRadius = 13;
+      cfg.playerSpeed = 140;
+      cfg.bagelRadius = 12;
+      cfg.fragmentRadius = 8;
+      cfg.initialCollapse = 50;
+      cfg.safeSpawnDistanceFromPlayer = 170;
+      cfg.hitPenalty = 12;
+      cfg.nearBagelDistance = 150;
+      cfg.nearBagelInnerDistance = 90;
+      cfg.chaseDecisionInterval = 0.18;
+      cfg.wanderDecisionInterval = 0.6;
+      cfg.stuckCheckInterval = 0.9;
+      cfg.tutorialUniverse = 'stone';
+      cfg.fragmentConcurrent = 7;
+      cfg.skillButtonRadius = 50;
+      cfg.uiEdgePadding = 6;
 
-      document.getElementById("swap").addEventListener("click", function () {
-        var computed = window.getComputedStyle(grid);
-        var columns = computed.gridTemplateColumns.split(" ").filter(Boolean).length;
-        if (columns >= 2) {
-          grid.style.gridTemplateColumns = "1fr";
-        } else {
-          grid.style.gridTemplateColumns = "1fr 1fr";
-        }
-      });
+      cfg.tutorialCollapseBaseRate = 0.5;
+      cfg.formalCollapseSplitTime = 30;
+      cfg.formalCollapseBaseRate1 = 1.2;
+      cfg.formalCollapseBaseRate2 = 2.0;
+      cfg.tutorialNearBagelOuterAdd = 0.8;
+      cfg.tutorialNearBagelInnerAdd = 1.2;
+      cfg.formalNearBagelOuterMultiplier = 1.5;
+      cfg.formalNearBagelInnerMultiplier = 2.5;
 
-      document.getElementById("open-engine").addEventListener("click", function () {
-        window.open("./engine.html", "_blank", "noopener,noreferrer");
-      });
+      cfg.tutorialFragmentRelief = 8;
+      cfg.tutorialFragmentRespawnDelay = 2.5;
+      cfg.formalFragmentRelief = 5;
+      cfg.formalFragmentRespawnDelay = 2.0;
+      cfg.formalFragmentFloorTrigger = 3;
+      cfg.formalFragmentFloor = 5;
 
-      document.getElementById("open-play").addEventListener("click", function () {
-        window.open("./play.html", "_blank", "noopener,noreferrer");
-      });
+      cfg.tutorialSkillEnabled = false;
+      cfg.formalSkillCooldown = 13;
+      cfg.formalSkillRelief = 15;
 
-      document.getElementById("open-engine-inline").addEventListener("click", function () {
-        window.open("./engine.html", "_blank", "noopener,noreferrer");
-      });
+      window.ULEAP_CONFIG.UNIVERSE_WEIGHTS = {
+        stone: 0.2,
+        laundromat: 0.25,
+        hotdog: 0.25,
+        kungfu: 0.3
+      };
 
-      if (location.protocol === "file:") {
-        notice.classList.add("notice--show");
+      var universes = window.ULEAP_CONFIG.UNIVERSES;
+      if (universes.stone) {
+        universes.stone.pursuerCount = 1;
+        universes.stone.speed = 80;
+        universes.stone.perception = 60;
+      }
+      if (universes.laundromat) {
+        universes.laundromat.pursuerCount = 3;
+        universes.laundromat.speed = 120;
+        universes.laundromat.perception = 100;
+      }
+      if (universes.hotdog) {
+        universes.hotdog.pursuerCount = 5;
+        universes.hotdog.speed = 80;
+        universes.hotdog.perception = 100;
+      }
+      if (universes.kungfu) {
+        universes.kungfu.pursuerCount = 3;
+        universes.kungfu.speed = 80;
+        universes.kungfu.perception = 160;
       }
     })();
   </script>
+  <script src="js/levels/mapTemplates.js"></script>
+  <script src="js/gameplay/utils.js"></script>
+  <script src="js/gameplay/input.js"></script>
+  <script src="js/gameplay/entities.js"></script>
+  <script src="js/gameplay/game.js"></script>
+  <script>
+    (function enforceNumberGameplayForMerge() {
+      'use strict';
+
+      if (!window.ULEAP_Game || !window.ULEAP_CONFIG || !window.ULEAP_UTILS) {
+        return;
+      }
+
+      var Game = window.ULEAP_Game;
+      var utils = window.ULEAP_UTILS;
+
+      function shallowClone(obj) {
+        var out = {};
+        for (var k in obj) {
+          if (Object.prototype.hasOwnProperty.call(obj, k)) {
+            out[k] = obj[k];
+          }
+        }
+        return out;
+      }
+
+      function clamp(value, min, max) {
+        return Math.max(min, Math.min(max, value));
+      }
+
+      function getPlayerRenderSize(tile) {
+        return Math.max(44, Math.min(tile - 8, Math.round(tile * 0.86)));
+      }
+
+      function getPlayerMatrixSpec(key) {
+        if (key === 'stone') {
+          return { cols: 10, rows: 10, maxDim: 10, minDim: 10 };
+        }
+        if (key === 'hotdog') {
+          return { cols: 20, rows: 24, maxDim: 24, minDim: 20 };
+        }
+        if (key === 'kungfu') {
+          return { cols: 24, rows: 24, maxDim: 24, minDim: 24 };
+        }
+        return { cols: 16, rows: 24, maxDim: 24, minDim: 16 };
+      }
+
+      function computePlayerRadius(tile, key) {
+        var size = getPlayerRenderSize(tile);
+        var spec = getPlayerMatrixSpec(key);
+        var block = Math.max(1, Math.floor(size / spec.maxDim));
+        var minDraw = spec.minDim * block;
+        var radius = Math.floor(minDraw * 0.5) - 1;
+        return clamp(radius, 8, Math.floor(tile * 0.5) - 2);
+      }
+
+      function computeBagelRadius(tile) {
+        var render = Math.min(tile - 6, Math.round(tile * 0.9));
+        var radius = Math.floor(render * 0.5) - 2;
+        return clamp(radius, 8, Math.floor(tile * 0.5) - 2);
+      }
+
+      function computeFragmentRadius(tile) {
+        var baseSize = Math.max(26, Math.min(tile - 16, Math.round(tile * 0.72)));
+        var radius = Math.floor(baseSize * 0.5) - 2;
+        return clamp(radius, 6, Math.floor(tile * 0.5) - 8);
+      }
+
+      function syncCollisionRadii(game, universeKey) {
+        var tile = game.map && game.map.tileSize ? game.map.tileSize : game.config.tileSize;
+        var playerR = computePlayerRadius(tile, universeKey);
+        var bagelR = computeBagelRadius(tile);
+        var fragR = computeFragmentRadius(tile);
+
+        game.config.playerRadius = playerR;
+        game.config.bagelRadius = bagelR;
+        game.config.fragmentRadius = fragR;
+
+        if (game.player) {
+          game.player.radius = playerR;
+        }
+
+        if (game.pursuers && game.pursuers.length) {
+          for (var i = 0; i < game.pursuers.length; i += 1) {
+            game.pursuers[i].radius = bagelR;
+          }
+        }
+
+        if (game.fragments && game.fragments.length) {
+          for (var j = 0; j < game.fragments.length; j += 1) {
+            game.fragments[j].radius = fragR;
+          }
+        }
+      }
+
+      Game.prototype.getUniverseWeight = function getUniverseWeight(key) {
+        var weights = window.ULEAP_CONFIG.UNIVERSE_WEIGHTS || {};
+        var w = weights[key];
+        return typeof w === 'number' && w > 0 ? w : 0;
+      };
+
+      var originalGetUniverse = Game.prototype.getUniverse;
+      Game.prototype.getUniverseForStage = function getUniverseForStage(key) {
+        var universe = originalGetUniverse.call(this, key);
+        if (this.stage === 'formal' && universe && universe.key === 'stone') {
+          var clone = shallowClone(universe);
+          clone.pursuerCount = 2;
+          clone.speed = 70;
+          clone.perception = 60;
+          return clone;
+        }
+        return universe;
+      };
+
+      Game.prototype.getRandomUniverseKey = function getRandomUniverseKey(excludeKey) {
+        var candidates = [];
+        var i;
+        for (i = 0; i < this.universePool.length; i += 1) {
+          if (this.universePool[i] !== excludeKey) {
+            candidates.push(this.universePool[i]);
+          }
+        }
+        if (!candidates.length) {
+          candidates = this.universePool.slice();
+        }
+
+        var total = 0;
+        for (i = 0; i < candidates.length; i += 1) {
+          total += this.getUniverseWeight(candidates[i]);
+        }
+        if (!total) {
+          return utils.pickRandom(candidates);
+        }
+
+        var roll = Math.random() * total;
+        for (i = 0; i < candidates.length; i += 1) {
+          roll -= this.getUniverseWeight(candidates[i]);
+          if (roll <= 0) {
+            return candidates[i];
+          }
+        }
+        return candidates[candidates.length - 1];
+      };
+
+      Game.prototype.applyUniverse = function applyUniverse(key, silent) {
+        var universe = this.getUniverseForStage(key);
+        var i;
+        window.ULEAP_CURRENT_UNIVERSE_KEY = universe.key;
+        this.currentUniverseKey = universe.key;
+        this.currentUniverse = universe;
+        this.player.color = universe.player;
+        this.pursuers = [];
+
+        syncCollisionRadii(this, universe.key);
+
+        for (i = 0; i < universe.pursuerCount; i += 1) {
+          this.pursuers.push(this.createPursuerAtSpawn(i));
+        }
+
+        if (this.pursuers && this.pursuers.length) {
+          for (i = 0; i < this.pursuers.length; i += 1) {
+            this.pursuers[i].radius = this.config.bagelRadius;
+          }
+        }
+
+        for (i = 0; i < this.fragments.length; i += 1) {
+          this.fragments[i].color = universe.fragment;
+          this.fragments[i].radius = this.config.fragmentRadius;
+        }
+
+        if (!silent) {
+          this.addToast('跃迁至 ' + universe.label + '。');
+        }
+      };
+
+      Game.prototype.resetPursuerPosition = function resetPursuerPosition(pursuer) {
+        var i;
+        var candidateCell;
+        var candidate;
+        var best = null;
+        var bestDistance = -1;
+
+        for (i = 0; i < this.map.pursuerSpawns.length; i += 1) {
+          candidateCell = this.map.pursuerSpawns[i];
+          candidate = utils.cellToWorldCenter(candidateCell.col, candidateCell.row, this.map.tileSize);
+          var dist = utils.distance(candidate.x, candidate.y, this.player.x, this.player.y);
+          if (dist > bestDistance) {
+            bestDistance = dist;
+            best = { x: candidate.x, y: candidate.y, spawnIndex: i };
+          }
+        }
+
+        if (best) {
+          pursuer.x = best.x;
+          pursuer.y = best.y;
+          pursuer.spawnIndex = best.spawnIndex;
+          pursuer.dirX = 0;
+          pursuer.dirY = 0;
+          pursuer.decisionTimer = 0;
+          pursuer.wanderTarget = null;
+        }
+      };
+
+      Game.prototype.collectFragment = function collectFragment(fragment) {
+        var cfg = this.config;
+        fragment.active = false;
+        fragment.respawnAt = this.elapsed + (this.stage === 'tutorial' ? cfg.tutorialFragmentRespawnDelay : cfg.formalFragmentRespawnDelay);
+        this.collectedTotal += 1;
+        if (this.stage === 'tutorial') {
+          this.collectedTutorial += 1;
+        }
+        var relief = this.stage === 'tutorial' ? cfg.tutorialFragmentRelief : cfg.formalFragmentRelief;
+        this.collapse = utils.clamp(this.collapse - relief, 0, 100);
+      };
+
+      function countActiveFragments(game) {
+        var active = 0;
+        for (var i = 0; i < game.fragments.length; i += 1) {
+          if (game.fragments[i].active) {
+            active += 1;
+          }
+        }
+        return active;
+      }
+
+      Game.prototype.ensureFormalFragmentFloor = function ensureFormalFragmentFloor() {
+        if (this.stage !== 'formal' || this.status !== 'playing') {
+          return;
+        }
+        var cfg = this.config;
+        var activeCount = countActiveFragments(this);
+        if (activeCount > cfg.formalFragmentFloorTrigger) {
+          return;
+        }
+        var want = Math.min(cfg.fragmentConcurrent, cfg.formalFragmentFloor);
+        if (activeCount >= want) {
+          return;
+        }
+
+        for (var i = 0; i < this.fragments.length && activeCount < want; i += 1) {
+          if (!this.fragments[i].active) {
+            var center = this.pickFragmentSpawn();
+            this.fragments[i].x = center.x;
+            this.fragments[i].y = center.y;
+            this.fragments[i].color = this.currentUniverse.fragment;
+            this.fragments[i].respawnAt = this.elapsed;
+            this.fragments[i].active = true;
+            activeCount += 1;
+          }
+        }
+
+        while (activeCount < want && this.fragments.length < cfg.fragmentConcurrent) {
+          this.spawnNewFragment(true);
+          activeCount += 1;
+        }
+      };
+
+      Game.prototype.getBagelZone = function getBagelZone() {
+        var cfg = this.config;
+        var outer = cfg.nearBagelDistance;
+        var inner = cfg.nearBagelInnerDistance;
+        var min = Infinity;
+        for (var i = 0; i < this.pursuers.length; i += 1) {
+          var d = utils.distance(this.player.x, this.player.y, this.pursuers[i].x, this.pursuers[i].y);
+          if (d < min) {
+            min = d;
+          }
+        }
+        if (min <= inner) {
+          return 'inner';
+        }
+        if (min <= outer) {
+          return 'outer';
+        }
+        return 'none';
+      };
+
+      Game.prototype.getCollapseBaseRate = function getCollapseBaseRate() {
+        var cfg = this.config;
+        if (this.stage === 'tutorial') {
+          return cfg.tutorialCollapseBaseRate;
+        }
+        return this.elapsed < cfg.formalCollapseSplitTime ? cfg.formalCollapseBaseRate1 : cfg.formalCollapseBaseRate2;
+      };
+
+      Game.prototype.updateGameplay = function updateGameplay(dt) {
+        var cfg = this.config;
+        var baseRate = this.getCollapseBaseRate();
+        var zone = this.getBagelZone();
+        var rate = baseRate;
+
+        if (this.stage === 'tutorial') {
+          if (zone === 'outer') {
+            rate += cfg.tutorialNearBagelOuterAdd;
+          } else if (zone === 'inner') {
+            rate += cfg.tutorialNearBagelInnerAdd;
+          }
+        } else if (zone === 'outer') {
+          rate *= cfg.formalNearBagelOuterMultiplier;
+        } else if (zone === 'inner') {
+          rate *= cfg.formalNearBagelInnerMultiplier;
+        }
+
+        this.elapsed += dt;
+        this.skillCooldownLeft = Math.max(0, this.skillCooldownLeft - dt);
+        if (this.toast) {
+          this.toast.ttl -= dt;
+          if (this.toast.ttl <= 0) {
+            this.toast = null;
+          }
+        }
+
+        this.collapse = utils.clamp(this.collapse + rate * dt, 0, 100);
+        this.updatePlayer(dt);
+        this.updatePursuers(dt);
+        this.checkFragmentCollection();
+        this.respawnDueFragments();
+        this.ensureFormalFragmentFloor();
+        this.checkPursuerCollisions();
+
+        if (this.collapse <= 0) {
+          this.finish('win');
+        } else if (this.collapse >= 100) {
+          this.finish('lose');
+        }
+      };
+
+      var originalTryUseSkill = Game.prototype.tryUseSkill;
+      Game.prototype.tryUseSkill = function tryUseSkill() {
+        if (this.config.tutorialSkillEnabled === false && this.stage === 'tutorial') {
+          return;
+        }
+        if (this.skillCooldownLeft > 0 || this.status !== 'playing') {
+          return;
+        }
+        if (this.stage === 'tutorial') {
+          this.skillCooldownLeft = 0;
+          this.applyUniverse(this.config.tutorialUniverse, true);
+          this.resetAllPursuers();
+          this.addToast('教程关已稳定在石头宇宙，追逐者被重置。');
+          return;
+        }
+
+        this.skillCooldownLeft = this.config.formalSkillCooldown;
+        this.collapse = utils.clamp(this.collapse - this.config.formalSkillRelief, 0, 100);
+        this.applyUniverse(this.getRandomUniverseKey(this.currentUniverseKey), false);
+        this.resetAllPursuers();
+      };
+
+      Game.prototype.startLevel2 = function startLevel2() {
+        var spawn = utils.cellToWorldCenter(this.map.playerSpawn.col, this.map.playerSpawn.row, this.map.tileSize);
+        this.stage = 'formal';
+        this.pendingFormalEntry = false;
+        this.status = 'playing';
+        this.elapsed = 0;
+        this.collapse = this.config.initialCollapse;
+        this.collectedTotal = 0;
+        this.collectedTutorial = 0;
+        this.skillCooldownLeft = 0;
+        this.overlayButton = null;
+        this.player = window.ULEAP_ENTITIES.createPlayer(
+          spawn.x,
+          spawn.y,
+          this.config.playerRadius,
+          this.config.playerSpeed,
+          this.getUniverse(this.config.tutorialUniverse).player
+        );
+        this.fragments = [];
+        this.nextFragmentId = 1;
+
+        var initialKey = this.getRandomUniverseKey('stone');
+        this.applyUniverse(initialKey, true);
+        this.initializeFragments();
+        this.resetAllPursuers();
+        this.addToast('第2关开始：四宇宙将随技能随机跃迁。');
+      };
+
+      Game.prototype.updatePlayer = function updatePlayer(dt) {
+        var move = this.input.getMoveVector();
+        var len = utils.length(move.x, move.y);
+        if (len > 0.0001) {
+          this._moveHoldTime = (this._moveHoldTime || 0) + dt;
+        } else {
+          this._moveHoldTime = 0;
+        }
+
+        var hold = this._moveHoldTime || 0;
+        var factor = 1;
+        if (hold > 0.3) {
+          var t = Math.min(1, (hold - 0.3) / 0.5);
+          factor = 1 + t * (80 / 60 - 1);
+        }
+
+        window.ULEAP_ENTITIES.moveCircle(
+          this.player,
+          move.x * this.player.speed * factor * dt,
+          move.y * this.player.speed * factor * dt,
+          this.player.radius,
+          this.map
+        );
+      };
+    })();
+  </script>
+  <script>
+    (function patchRandomMazeForMerge() {
+      'use strict';
+
+      function shuffle(array) {
+        for (var i = array.length - 1; i > 0; i -= 1) {
+          var j = Math.floor(Math.random() * (i + 1));
+          var tmp = array[i];
+          array[i] = array[j];
+          array[j] = tmp;
+        }
+        return array;
+      }
+
+      function clamp(value, min, max) {
+        return Math.max(min, Math.min(max, value));
+      }
+
+      function getTileFromWorld(x, y, tileSize, cols, rows) {
+        var col = clamp(Math.floor(x / tileSize), 1, cols - 2);
+        var row = clamp(Math.floor(y / tileSize), 1, rows - 2);
+        return { col: col, row: row };
+      }
+
+      function wouldMake2x2Open(grid, row, col) {
+        for (var dr = -1; dr <= 0; dr += 1) {
+          for (var dc = -1; dc <= 0; dc += 1) {
+            var r0 = row + dr;
+            var c0 = col + dc;
+            if (r0 < 0 || c0 < 0 || r0 + 1 >= grid.length || c0 + 1 >= grid[0].length) {
+              continue;
+            }
+            var openCount = 0;
+            for (var rr = r0; rr <= r0 + 1; rr += 1) {
+              for (var cc = c0; cc <= c0 + 1; cc += 1) {
+                var isCandidate = rr === row && cc === col;
+                if (isCandidate || grid[rr][cc] === '0') {
+                  openCount += 1;
+                }
+              }
+            }
+            if (openCount === 4) {
+              return true;
+            }
+          }
+        }
+        return false;
+      }
+
+      function makeGrid(rows, cols) {
+        var grid = [];
+        for (var r = 0; r < rows; r += 1) {
+          var row = [];
+          for (var c = 0; c < cols; c += 1) {
+            row.push('1');
+          }
+          grid.push(row);
+        }
+        return grid;
+      }
+
+      function openCell(grid, row, col) {
+        grid[row][col] = '0';
+      }
+
+      function isOpen(grid, row, col) {
+        return grid[row][col] === '0';
+      }
+
+      function neighbors4(row, col) {
+        return [
+          { row: row - 1, col: col },
+          { row: row + 1, col: col },
+          { row: row, col: col - 1 },
+          { row: row, col: col + 1 }
+        ];
+      }
+
+      function carveRandomMaze(options) {
+        var rows = options.rows;
+        var cols = options.cols;
+        var anchor = options.anchor;
+        var playerSpawn = options.playerSpawn;
+        var pursuerSpawns = options.pursuerSpawns;
+        var required = options.required;
+        var targetOpen = options.targetOpen;
+
+        var grid = makeGrid(rows, cols);
+
+        function inInterior(r, c) {
+          return r >= 1 && r <= rows - 2 && c >= 1 && c <= cols - 2;
+        }
+
+        var requiredCells = [];
+        requiredCells.push({ row: playerSpawn.row, col: playerSpawn.col });
+        for (var i = 0; i < pursuerSpawns.length; i += 1) {
+          requiredCells.push({ row: pursuerSpawns[i].row, col: pursuerSpawns[i].col });
+        }
+        for (var j = 0; j < required.length; j += 1) {
+          requiredCells.push({ row: required[j].row, col: required[j].col });
+        }
+
+        for (var k = 0; k < requiredCells.length; k += 1) {
+          var rc = requiredCells[k];
+          if (inInterior(rc.row, rc.col)) {
+            openCell(grid, rc.row, rc.col);
+          }
+        }
+
+        if (!inInterior(anchor.row, anchor.col)) {
+          anchor = { row: playerSpawn.row, col: playerSpawn.col };
+        }
+        openCell(grid, anchor.row, anchor.col);
+
+        function carveManhattanPath(from, to) {
+          var r = from.row;
+          var c = from.col;
+          openCell(grid, r, c);
+          var guard = 0;
+          while ((r !== to.row || c !== to.col) && guard < 2000) {
+            guard += 1;
+            var moves = [];
+            if (to.row < r) moves.push({ row: r - 1, col: c });
+            if (to.row > r) moves.push({ row: r + 1, col: c });
+            if (to.col < c) moves.push({ row: r, col: c - 1 });
+            if (to.col > c) moves.push({ row: r, col: c + 1 });
+            shuffle(moves);
+            var moved = false;
+            for (var m = 0; m < moves.length; m += 1) {
+              var nr = moves[m].row;
+              var nc = moves[m].col;
+              if (!inInterior(nr, nc)) {
+                continue;
+              }
+              openCell(grid, nr, nc);
+              r = nr;
+              c = nc;
+              moved = true;
+              break;
+            }
+            if (!moved) {
+              var fallback = shuffle(neighbors4(r, c));
+              for (var f = 0; f < fallback.length; f += 1) {
+                var fr = fallback[f].row;
+                var fc = fallback[f].col;
+                if (inInterior(fr, fc)) {
+                  openCell(grid, fr, fc);
+                  r = fr;
+                  c = fc;
+                  moved = true;
+                  break;
+                }
+              }
+            }
+            if (!moved) {
+              break;
+            }
+          }
+        }
+
+        for (var p = 0; p < requiredCells.length; p += 1) {
+          carveManhattanPath(anchor, requiredCells[p]);
+        }
+
+        function countOpenCells() {
+          var count = 0;
+          for (var r0 = 0; r0 < rows; r0 += 1) {
+            for (var c0 = 0; c0 < cols; c0 += 1) {
+              if (grid[r0][c0] === '0') {
+                count += 1;
+              }
+            }
+          }
+          return count;
+        }
+
+        var openCount = countOpenCells();
+        var openList = [];
+        for (var r1 = 1; r1 <= rows - 2; r1 += 1) {
+          for (var c1 = 1; c1 <= cols - 2; c1 += 1) {
+            if (grid[r1][c1] === '0') {
+              openList.push({ row: r1, col: c1 });
+            }
+          }
+        }
+
+        var iterations = 0;
+        while (openCount < targetOpen && iterations < 8000) {
+          iterations += 1;
+          if (!openList.length) {
+            break;
+          }
+          var base = openList[Math.floor(Math.random() * openList.length)];
+          var nbs = shuffle(neighbors4(base.row, base.col));
+          for (var n = 0; n < nbs.length; n += 1) {
+            var rr2 = nbs[n].row;
+            var cc2 = nbs[n].col;
+            if (!inInterior(rr2, cc2) || isOpen(grid, rr2, cc2)) {
+              continue;
+            }
+            if (wouldMake2x2Open(grid, rr2, cc2)) {
+              continue;
+            }
+            openCell(grid, rr2, cc2);
+            openList.push({ row: rr2, col: cc2 });
+            openCount += 1;
+            break;
+          }
+        }
+
+        var result = [];
+        for (var rr3 = 0; rr3 < rows; rr3 += 1) {
+          result.push(grid[rr3].join(''));
+        }
+        return result;
+      }
+
+      function buildTemplate(gridLines, playerSpawn, pursuerSpawns) {
+        var rows = gridLines.length;
+        var cols = gridLines[0].length;
+        var openCells = [];
+        for (var r = 1; r <= rows - 2; r += 1) {
+          for (var c = 1; c <= cols - 2; c += 1) {
+            if (gridLines[r].charAt(c) === '0') {
+              openCells.push({ row: r, col: c });
+            }
+          }
+        }
+
+        function dist2(a, b) {
+          var dx = a.col - b.col;
+          var dy = a.row - b.row;
+          return dx * dx + dy * dy;
+        }
+
+        var spawn = { row: playerSpawn.row, col: playerSpawn.col };
+        var candidates = [];
+        for (var i = 0; i < openCells.length; i += 1) {
+          var cell = openCells[i];
+          if (cell.row === spawn.row && cell.col === spawn.col) {
+            continue;
+          }
+          if (dist2(cell, spawn) < 5) {
+            continue;
+          }
+          candidates.push(cell);
+        }
+
+        candidates.sort(function (a, b) {
+          return dist2(b, spawn) - dist2(a, spawn);
+        });
+
+        var fragmentSpawns = [];
+        for (var j = 0; j < candidates.length; j += 1) {
+          fragmentSpawns.push({ col: candidates[j].col, row: candidates[j].row });
+        }
+
+        if (!fragmentSpawns.length && openCells.length) {
+          fragmentSpawns.push({ col: openCells[0].col, row: openCells[0].row });
+        }
+
+        return {
+          key: 'mainMaze',
+          name: '贝果迷宫',
+          grid: gridLines,
+          playerSpawn: { col: playerSpawn.col, row: playerSpawn.row },
+          pursuerSpawns: pursuerSpawns.slice(),
+          fragmentSpawns: fragmentSpawns
+        };
+      }
+
+      function ensurePatched() {
+        if (!window.ULEAP_MAPS || !window.ULEAP_CONFIG || !window.ULEAP_Game) {
+          return;
+        }
+
+        var config = window.ULEAP_CONFIG.GAME_CONFIG || {};
+        var rows = config.mapRows || 16;
+        var cols = config.mapCols || 9;
+        var tileSize = config.tileSize || 80;
+
+        var playerSpawn = { col: 1, row: 1 };
+        var pursuerSpawns = [
+          { col: 9, row: 1 },
+          { col: 9, row: 13 },
+          { col: 1, row: 13 },
+          { col: 6, row: 11 }
+        ];
+
+        function buildNewTemplate(anchorTile, requiredTiles) {
+          var gridLines = carveRandomMaze({
+            rows: rows,
+            cols: cols,
+            anchor: { row: anchorTile.row, col: anchorTile.col },
+            playerSpawn: { row: playerSpawn.row, col: playerSpawn.col },
+            pursuerSpawns: pursuerSpawns.map(function (s) { return { row: s.row, col: s.col }; }),
+            required: requiredTiles || [],
+            targetOpen: 63
+          });
+
+          return buildTemplate(gridLines, playerSpawn, pursuerSpawns);
+        }
+
+        function rebuildMazeForGame(game, anchorTile) {
+          var template = buildNewTemplate(anchorTile, []);
+          window.ULEAP_MAPS.mainMaze = template;
+          game.map = game.buildMap(template);
+        }
+
+        var proto = window.ULEAP_Game.prototype;
+        if (!proto.__mergeRandomMazePatched) {
+          proto.__mergeRandomMazePatched = true;
+
+          var originalReset = proto.reset;
+          proto.reset = function patchedReset() {
+            rebuildMazeForGame(this, { row: playerSpawn.row, col: playerSpawn.col });
+            return originalReset.apply(this, arguments);
+          };
+
+          var originalApplyUniverse = proto.applyUniverse;
+          proto.applyUniverse = function patchedApplyUniverse(key) {
+            var shouldRebuild = !this.currentUniverseKey || key !== this.currentUniverseKey;
+            if (shouldRebuild) {
+              var anchor = getTileFromWorld(this.player ? this.player.x : tileSize, this.player ? this.player.y : tileSize, tileSize, cols, rows);
+              rebuildMazeForGame(this, anchor);
+            }
+            var result = originalApplyUniverse.apply(this, arguments);
+            if (shouldRebuild && this.fragments && this.fragments.length && this.pickFragmentSpawn) {
+              for (var i = 0; i < this.fragments.length; i += 1) {
+                if (this.fragments[i].active) {
+                  var center = this.pickFragmentSpawn();
+                  this.fragments[i].x = center.x;
+                  this.fragments[i].y = center.y;
+                }
+              }
+            }
+            return result;
+          };
+        }
+
+        if (window.ULEAP_MAPS && window.ULEAP_MAPS.mainMaze && !window.ULEAP_MAPS.mainMaze.__randomizedForMerge) {
+          var initial = buildNewTemplate({ row: playerSpawn.row, col: playerSpawn.col }, []);
+          initial.__randomizedForMerge = true;
+          window.ULEAP_MAPS.mainMaze = initial;
+        }
+      }
+
+      ensurePatched();
+    })();
+  </script>
+  <script>
+    (function integrateArtIntoRuntime() {
+      'use strict';
+
+      if (!window.ULEAP_Game || !window.ULEAP_ENTITIES) {
+        return;
+      }
+
+      var Game = window.ULEAP_Game;
+      var entities = window.ULEAP_ENTITIES;
+
+      var backgroundSources = {
+        stone: 'assets/art/backgrounds/bg_universe_stone.png',
+        laundromat: 'assets/art/backgrounds/bg_universe_laundromat.png',
+        hotdog: 'assets/art/backgrounds/bg_universe_hotdog.png',
+        kungfu: 'assets/art/backgrounds/bg_universe_kungfu.png'
+      };
+
+      var backgrounds = {};
+      Object.keys(backgroundSources).forEach(function (key) {
+        var img = new Image();
+        img.src = backgroundSources[key];
+        backgrounds[key] = img;
+      });
+
+      function drawCover(ctx, img, w, h) {
+        var iw = img.naturalWidth || img.width;
+        var ih = img.naturalHeight || img.height;
+        if (!iw || !ih) {
+          return;
+        }
+        var scale = Math.min(w / iw, h / ih);
+        var dw = iw * scale;
+        var dh = ih * scale;
+        var dx = (w - dw) * 0.5;
+        var dy = (h - dh) * 0.5;
+        ctx.drawImage(img, dx, dy, dw, dh);
+      }
+
+      function drawMatrixSprite(context, matrix, palette, centerX, centerY, size) {
+        var rows = matrix.length;
+        var cols = matrix[0].length;
+        var blockSize = Math.max(1, Math.floor(size / Math.max(rows, cols)));
+        var drawW = cols * blockSize;
+        var drawH = rows * blockSize;
+        var x0 = Math.round(centerX - drawW * 0.5);
+        var y0 = Math.round(centerY - drawH * 0.5);
+        var rowIndex;
+        var colIndex;
+        var row;
+        var idx;
+
+        context.save();
+        context.imageSmoothingEnabled = false;
+        for (rowIndex = 0; rowIndex < rows; rowIndex += 1) {
+          row = matrix[rowIndex];
+          for (colIndex = 0; colIndex < cols; colIndex += 1) {
+            idx = row.charCodeAt(colIndex) - 48;
+            if (!idx) {
+              continue;
+            }
+            context.fillStyle = palette[idx];
+            context.fillRect(x0 + colIndex * blockSize, y0 + rowIndex * blockSize, blockSize, blockSize);
+          }
+        }
+        context.restore();
+      }
+
+      var classicPalette = {
+        1: '#1b1412',
+        2: '#f1c27d',
+        3: '#c01818',
+        4: '#7f0f12'
+      };
+      var classicMatrix = [
+        '0000111111110000',
+        '0001111111111000',
+        '0011111111111100',
+        '0011112222111100',
+        '0111122222221110',
+        '0111222222222110',
+        '0111222222222110',
+        '0111122222221110',
+        '0011112222111100',
+        '0011111111111100',
+        '0011113333111100',
+        '0111133333331110',
+        '0111333333333110',
+        '0111333444333110',
+        '0111333444333110',
+        '0111333333333110',
+        '0011333333331100',
+        '0001133333311000',
+        '0000113333110000',
+        '0000114444110000',
+        '0000114444110000',
+        '0000014444100000',
+        '0000001111000000',
+        '0000000000000000'
+      ];
+
+      var hotdogPalette = {
+        1: '#2a1c16',
+        2: '#f2c27b',
+        3: '#3b556a',
+        4: '#e07b4f',
+        5: '#b85b35'
+      };
+      var hotdogMatrix = [
+        '00000111111100000000',
+        '00001111111110000000',
+        '00011111111111000000',
+        '00111122222211110000',
+        '00111222222221110000',
+        '00111222222221110000',
+        '00111122222211110000',
+        '00011112222111100000',
+        '00003333333333300000',
+        '00444433333334444000',
+        '04555433333345555000',
+        '04555433333345555000',
+        '04555433333345555000',
+        '00444433333334444000',
+        '00003333333333300000',
+        '00000333333330000000',
+        '00000333333330000000',
+        '00000333333330000000',
+        '00000033333300000000',
+        '00000033333300000000',
+        '00000003333000000000',
+        '00000000000000000000',
+        '00000000000000000000',
+        '00000000000000000000'
+      ];
+
+      var kungfuPalette = {
+        1: '#141216',
+        2: '#F2C27B',
+        3: '#F4F4F4',
+        4: '#CFCFD4',
+        5: '#101014',
+        6: '#0A0A0C'
+      };
+      var kungfuMatrix = [
+        '000000000066660000000000',
+        '000000000661166000000000',
+        '000000006611116600000000',
+        '000000006112221600000000',
+        '000000061122222160000000',
+        '000000611222222216000000',
+        '000000611222222216000000',
+        '000000061122222160000000',
+        '000000006112221600000000',
+        '000000006333333600000000',
+        '000000063344443360000000',
+        '000000633344444336000000',
+        '000006333334433333600000',
+        '000006333333333333600000',
+        '000006333335553333600000',
+        '000006333355553333600000',
+        '000000633335553336000000',
+        '000000063333333360000000',
+        '000000006334443600000000',
+        '000000006334443600000000',
+        '000000006344443600000000',
+        '000000000663336000000000',
+        '000000000066660000000000',
+        '000000000000000000000000'
+      ];
+
+      var stonePalette = {
+        1: '#7d7d7d',
+        2: '#bdbdbd'
+      };
+      var stoneMatrix = [
+        '0001111000',
+        '0012222100',
+        '0122222220',
+        '1222222221',
+        '1220000221',
+        '1220000221',
+        '1222222221',
+        '0122222210',
+        '0012222100',
+        '0001111000'
+      ];
+
+      var bagelOffscreen = document.createElement('canvas');
+      var bagelCtx = bagelOffscreen.getContext('2d');
+      bagelOffscreen.width = 32;
+      bagelOffscreen.height = 32;
+      bagelCtx.imageSmoothingEnabled = false;
+      var bagelPalette = {
+        outline: '#5a2406',
+        dark: '#9a470d',
+        mid: '#c86410',
+        warm: '#dd7b14',
+        light: '#f0b35d',
+        cream: '#f7e2a1',
+        glaze: '#fff3ca',
+        hole: '#261004',
+        seed: '#fff6dd'
+      };
+      var seedPositions = [
+        { x: 10, y: 7 }, { x: 14, y: 6 }, { x: 21, y: 7 }, { x: 24, y: 9 },
+        { x: 8, y: 10 }, { x: 18, y: 9 }, { x: 23, y: 12 }, { x: 7, y: 14 },
+        { x: 12, y: 16 }, { x: 20, y: 15 }, { x: 25, y: 16 }, { x: 9, y: 20 },
+        { x: 15, y: 21 }, { x: 22, y: 20 }, { x: 18, y: 24 }
+      ];
+
+      function getBagelColor(x, y) {
+        var dx = x - 16;
+        var dy = y - 16;
+        var outer = (dx * dx) / (13.7 * 13.7) + (dy * dy) / (11.6 * 11.6);
+        var innerDx = x - 16.1;
+        var innerDy = y - 15.6;
+        var inner = (innerDx * innerDx) / (4.1 * 4.1) + (innerDy * innerDy) / (2.9 * 2.9);
+        var edgeBias = (x - 16) * 0.06 + (y - 16) * 0.03;
+
+        if (outer > 1.08) {
+          return null;
+        }
+        if (inner < 0.9) {
+          return bagelPalette.hole;
+        }
+        if (outer > 0.98) {
+          return bagelPalette.outline;
+        }
+        if (inner < 1.15) {
+          return bagelPalette.dark;
+        }
+        if (outer > 0.88) {
+          return edgeBias > 0.3 ? bagelPalette.dark : bagelPalette.light;
+        }
+        if ((x <= 10 && y <= 12) || (x >= 20 && y >= 15 && y <= 23) || (y >= 23 && x >= 8 && x <= 23)) {
+          return bagelPalette.cream;
+        }
+        if ((x <= 12 && y <= 9) || (x >= 22 && y >= 11 && y <= 19)) {
+          return bagelPalette.glaze;
+        }
+        if ((x >= 12 && x <= 19 && y >= 11 && y <= 19) || (x >= 8 && x <= 23 && y >= 20 && y <= 23)) {
+          return bagelPalette.warm;
+        }
+        return edgeBias > 0.35 ? bagelPalette.mid : bagelPalette.light;
+      }
+
+      function renderBagelToOffscreen() {
+        bagelCtx.clearRect(0, 0, 32, 32);
+        for (var py = 0; py < 32; py += 1) {
+          for (var px = 0; px < 32; px += 1) {
+            var color = getBagelColor(px + 0.5, py + 0.5);
+            if (!color) {
+              continue;
+            }
+            bagelCtx.fillStyle = color;
+            bagelCtx.fillRect(px, py, 1, 1);
+          }
+        }
+        bagelCtx.fillStyle = bagelPalette.seed;
+        for (var i = 0; i < seedPositions.length; i += 1) {
+          bagelCtx.fillRect(seedPositions[i].x, seedPositions[i].y, 1, 1);
+          if (i % 3 === 0) {
+            bagelCtx.fillRect(seedPositions[i].x + 1, seedPositions[i].y, 1, 1);
+          }
+        }
+      }
+
+      renderBagelToOffscreen();
+
+      var fragmentGrid = [
+        [0, 0, 0, 1, 1, 0, 0, 0],
+        [0, 0, 1, 2, 2, 1, 0, 0],
+        [0, 1, 2, 3, 3, 2, 1, 0],
+        [1, 2, 3, 3, 3, 3, 2, 1],
+        [1, 2, 3, 3, 3, 3, 2, 1],
+        [0, 1, 2, 3, 3, 2, 1, 0],
+        [0, 0, 1, 2, 2, 1, 0, 0],
+        [0, 0, 0, 1, 1, 0, 0, 0]
+      ];
+      var fragmentColors = {
+        1: '#0055dd',
+        2: '#00e5ff',
+        3: '#ffffff'
+      };
+      var fragmentDots = [
+        [1, 1], [6, 1],
+        [1, 6], [6, 6],
+        [2, 2], [5, 2],
+        [2, 5], [5, 5],
+        [1, 3], [6, 3],
+        [3, 1], [4, 1],
+        [3, 6], [4, 6]
+      ];
+
+      function drawFragmentSprite(context, x, y, scale) {
+        var block = 4;
+        var factor = typeof scale === 'number' ? scale : 1;
+        context.save();
+        context.translate(x || 0, y || 0);
+        context.scale(factor, factor);
+        context.imageSmoothingEnabled = false;
+
+        for (var yy = 0; yy < 8; yy += 1) {
+          for (var xx = 0; xx < 8; xx += 1) {
+            var v = fragmentGrid[yy][xx];
+            if (!v) {
+              continue;
+            }
+            context.fillStyle = fragmentColors[v];
+            context.fillRect(xx * block, yy * block, block, block);
+          }
+        }
+
+        context.fillStyle = fragmentColors[2];
+        context.fillRect(0 * block, 3 * block, block, block);
+        context.fillRect(7 * block, 3 * block, block, block);
+        context.fillRect(3 * block, 0 * block, block, block);
+        context.fillRect(3 * block, 7 * block, block, block);
+        context.fillRect(4 * block, 0 * block, block, block);
+        context.fillRect(4 * block, 7 * block, block, block);
+
+        context.fillStyle = fragmentColors[3];
+        for (var i = 0; i < fragmentDots.length; i += 1) {
+          context.fillRect(fragmentDots[i][0] * block, fragmentDots[i][1] * block, block, block);
+        }
+        context.restore();
+      }
+
+      function clamp(value, min, max) {
+        return Math.max(min, Math.min(max, value));
+      }
+
+      function parseHexColor(value) {
+        if (typeof value !== 'string') {
+          return null;
+        }
+        var hex = value.trim();
+        if (hex.charAt(0) === '#') {
+          hex = hex.slice(1);
+        }
+        if (hex.length === 3) {
+          hex = hex.charAt(0) + hex.charAt(0) + hex.charAt(1) + hex.charAt(1) + hex.charAt(2) + hex.charAt(2);
+        }
+        if (hex.length !== 6) {
+          return null;
+        }
+        var r = parseInt(hex.slice(0, 2), 16);
+        var g = parseInt(hex.slice(2, 4), 16);
+        var b = parseInt(hex.slice(4, 6), 16);
+        if (isNaN(r) || isNaN(g) || isNaN(b)) {
+          return null;
+        }
+        return { r: r, g: g, b: b };
+      }
+
+      function rgbToHex(rgb) {
+        function to2(n) {
+          var s = clamp(Math.round(n), 0, 255).toString(16);
+          return s.length === 1 ? '0' + s : s;
+        }
+        return '#' + to2(rgb.r) + to2(rgb.g) + to2(rgb.b);
+      }
+
+      function shadeColor(hex, amount) {
+        var rgb = parseHexColor(hex);
+        if (!rgb) {
+          return hex;
+        }
+        return rgbToHex({
+          r: rgb.r + 255 * amount,
+          g: rgb.g + 255 * amount,
+          b: rgb.b + 255 * amount
+        });
+      }
+
+      function getMapDrawOffset(game) {
+        var W = game.config.logicWidth;
+        var H = game.config.logicHeight;
+        var mapW = game.map.cols * game.map.tileSize;
+        var mapH = game.map.rows * game.map.tileSize;
+        var topReserved = 160;
+        var availH = Math.max(0, H - topReserved);
+        var dx = Math.round((W - mapW) * 0.5);
+        var dy = Math.round(topReserved + (availH - mapH) * 0.5);
+        dx = Math.max(0, dx);
+        dy = clamp(dy, topReserved, Math.max(topReserved, H - mapH));
+        return { x: dx, y: dy, mapW: mapW, mapH: mapH, topReserved: topReserved };
+      }
+
+      function drawPixelBrick(ctx, x, y, tile, baseColor, seed) {
+        var base = baseColor;
+        var dark = shadeColor(baseColor, -0.22);
+        var darker = shadeColor(baseColor, -0.36);
+        var light = shadeColor(baseColor, 0.16);
+        var mid = shadeColor(baseColor, -0.08);
+
+        ctx.fillStyle = base;
+        ctx.fillRect(x, y, tile, tile);
+
+        ctx.fillStyle = darker;
+        ctx.fillRect(x, y, tile, 2);
+        ctx.fillRect(x, y, 2, tile);
+        ctx.fillRect(x, y + tile - 2, tile, 2);
+        ctx.fillRect(x + tile - 2, y, 2, tile);
+
+        ctx.fillStyle = light;
+        ctx.fillRect(x + 2, y + 2, tile - 4, 2);
+        ctx.fillRect(x + 2, y + 2, 2, tile - 4);
+
+        var seamY = y + Math.floor(tile * 0.52);
+        ctx.fillStyle = dark;
+        ctx.fillRect(x + 2, seamY, tile - 4, 2);
+
+        var offset = (seed % 2) ? Math.floor(tile * 0.28) : Math.floor(tile * 0.14);
+        var seamX1 = x + offset;
+        var seamX2 = x + Math.floor(tile * 0.72);
+        ctx.fillRect(seamX1, y + 2, 2, Math.floor(tile * 0.52) - 2);
+        ctx.fillRect(seamX2, y + 2, 2, Math.floor(tile * 0.52) - 2);
+
+        ctx.fillStyle = mid;
+        var px = x + 6 + (seed % 7) * 2;
+        var py = y + 8 + (seed % 5) * 2;
+        ctx.fillRect(px, py, 2, 2);
+        ctx.fillRect(x + tile - 10, y + 10, 2, 2);
+      }
+
+      function getRenderTileSize(fallback) {
+        var t = window.ULEAP_RENDER_TILE_SIZE;
+        return typeof t === 'number' && t > 0 ? t : (typeof fallback === 'number' && fallback > 0 ? fallback : 60);
+      }
+
+      var originalDrawBackground = Game.prototype.drawBackground;
+      Game.prototype.drawBackground = function drawBackground(ctx) {
+        var key = this.currentUniverseKey || (this.currentUniverse && this.currentUniverse.key) || 'stone';
+        var img = backgrounds[key];
+        ctx.clearRect(0, 0, this.config.logicWidth, this.config.logicHeight);
+        if (img && img.complete && (img.naturalWidth || img.width)) {
+          ctx.save();
+          ctx.globalAlpha = 1;
+          ctx.imageSmoothingEnabled = true;
+          drawCover(ctx, img, this.config.logicWidth, this.config.logicHeight);
+          ctx.fillStyle = 'rgba(0,0,0,0.08)';
+          ctx.fillRect(0, 0, this.config.logicWidth, this.config.logicHeight);
+          ctx.restore();
+          return;
+        }
+        return originalDrawBackground.call(this, ctx);
+      };
+
+      Game.prototype.drawMap = function drawMap(ctx) {
+        var offset = getMapDrawOffset(this);
+        var key = this.currentUniverseKey || (this.currentUniverse && this.currentUniverse.key) || 'stone';
+        var tile = this.map.tileSize;
+        window.ULEAP_RENDER_TILE_SIZE = tile;
+        ctx.save();
+        ctx.translate(offset.x, offset.y);
+        ctx.imageSmoothingEnabled = false;
+        for (var row = 0; row < this.map.rows; row += 1) {
+          for (var col = 0; col < this.map.cols; col += 1) {
+            var x = col * tile;
+            var y = row * tile;
+            if (entities.isWall(this.map, col, row)) {
+              var wallColor = key === 'kungfu' ? '#5E6167' : (key === 'stone' ? '#7A4A24' : this.currentUniverse.wall);
+              drawPixelBrick(ctx, x, y, tile, wallColor, row * 31 + col * 17);
+            }
+          }
+        }
+        ctx.restore();
+      };
+
+      var originalDrawPursuers = Game.prototype.drawPursuers;
+      var originalDrawFragments = Game.prototype.drawFragments;
+
+      Game.prototype.drawPlayer = function drawPlayer(ctx) {
+        var offset = getMapDrawOffset(this);
+        var key = this.currentUniverseKey || (this.currentUniverse && this.currentUniverse.key) || 'stone';
+        var tile = this.map.tileSize;
+        window.ULEAP_RENDER_TILE_SIZE = tile;
+        var size = Math.max(44, Math.min(tile - 8, Math.round(tile * 0.86)));
+        ctx.save();
+        ctx.translate(offset.x, offset.y);
+        if (key === 'stone') {
+          drawMatrixSprite(ctx, stoneMatrix, stonePalette, this.player.x, this.player.y, size);
+        } else if (key === 'hotdog') {
+          drawMatrixSprite(ctx, hotdogMatrix, hotdogPalette, this.player.x, this.player.y, size);
+        } else if (key === 'kungfu') {
+          drawMatrixSprite(ctx, kungfuMatrix, kungfuPalette, this.player.x, this.player.y, size);
+        } else {
+          drawMatrixSprite(ctx, classicMatrix, classicPalette, this.player.x, this.player.y, size);
+        }
+        ctx.restore();
+      };
+
+      Game.prototype.drawPursuers = function drawPursuers(ctx) {
+        var offset = getMapDrawOffset(this);
+        ctx.save();
+        ctx.translate(offset.x, offset.y);
+        originalDrawPursuers.call(this, ctx);
+        ctx.restore();
+      };
+
+      Game.prototype.drawFragments = function drawFragments(ctx) {
+        var offset = getMapDrawOffset(this);
+        ctx.save();
+        ctx.translate(offset.x, offset.y);
+        originalDrawFragments.call(this, ctx);
+        ctx.restore();
+      };
+
+      Game.prototype.drawHUD = function drawHUD(ctx) {
+        var W = this.config.logicWidth;
+        var panelX = 24;
+        var panelY = 18;
+        var panelW = W - 48;
+        var panelH = 128;
+        var barX = panelX + 12;
+        var barY = panelY + 88;
+        var barW = panelW - 24;
+        var barH = 22;
+        var fillW = barW * (this.collapse / 100);
+
+        ctx.save();
+        ctx.fillStyle = 'rgba(0,0,0,0.42)';
+        ctx.fillRect(panelX, panelY, panelW, panelH);
+        ctx.strokeStyle = 'rgba(255,255,255,0.10)';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(panelX + 0.5, panelY + 0.5, panelW - 1, panelH - 1);
+
+        ctx.fillStyle = '#fff7df';
+        ctx.font = 'bold 26px Arial';
+        ctx.fillText(this.config.title, panelX + 12, panelY + 34);
+
+        ctx.font = '20px Arial';
+        ctx.fillStyle = 'rgba(255,247,223,0.92)';
+        ctx.fillText('宇宙：' + this.currentUniverse.label, panelX + 12, panelY + 64);
+        ctx.fillText(this.stage === 'tutorial' ? '关卡：第1关' : '关卡：第2关', panelX + 12, panelY + 88);
+        ctx.fillText('时间：' + window.ULEAP_UTILS.formatSeconds(this.elapsed), panelX + 360, panelY + 64);
+        ctx.fillText('碎片：' + this.collectedTotal, panelX + 360, panelY + 88);
+        ctx.fillText('贝果：' + this.pursuers.length, panelX + 540, panelY + 88);
+
+        ctx.fillStyle = 'rgba(255,255,255,0.14)';
+        ctx.fillRect(barX, barY, barW, barH);
+        ctx.fillStyle = this.collapse < 35 ? '#5fe08b' : (this.collapse < 70 ? '#f7c44a' : '#ff6b5e');
+        ctx.fillRect(barX, barY, fillW, barH);
+        ctx.font = 'bold 18px Arial';
+        ctx.fillStyle = '#fff7df';
+        ctx.fillText('坍塌值 ' + this.collapse.toFixed(1) + '%', barX, barY + 42);
+        ctx.restore();
+      };
+
+      Game.prototype.drawSkillButton = function drawSkillButton(ctx) {
+        var skill = this.input.skillButton;
+        var W = this.config.logicWidth;
+        var H = this.config.logicHeight;
+        var radius = skill.radius;
+        var pad = 14;
+        skill.x = W - pad - radius;
+        skill.y = H - pad - radius;
+
+        var cooldown = this.stage === 'formal' ? this.config.formalSkillCooldown : 0;
+        var enabled = this.stage === 'formal';
+        var ratio = enabled && this.skillCooldownLeft > 0 && cooldown > 0 ? this.skillCooldownLeft / cooldown : 0;
+
+        ctx.save();
+        ctx.globalAlpha = 0.9;
+
+        ctx.fillStyle = enabled ? (this.skillCooldownLeft > 0 ? 'rgba(130,130,130,0.65)' : this.currentUniverse.accent) : 'rgba(90,90,90,0.55)';
+        ctx.beginPath();
+        ctx.arc(skill.x, skill.y, skill.radius, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.strokeStyle = 'rgba(255,255,255,0.85)';
+        ctx.lineWidth = 7;
+        ctx.beginPath();
+        ctx.arc(skill.x, skill.y, skill.radius - 10, -Math.PI * 0.5, -Math.PI * 0.5 + Math.PI * 2 * (1 - ratio));
+        ctx.stroke();
+
+        ctx.fillStyle = '#111';
+        ctx.font = 'bold 20px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('跃迁', skill.x, skill.y - 3);
+        ctx.font = '16px Arial';
+        if (!enabled) {
+          ctx.fillText('禁用', skill.x, skill.y + 22);
+        } else {
+          ctx.fillText(this.skillCooldownLeft > 0 ? this.skillCooldownLeft.toFixed(1) + 's' : '就绪', skill.x, skill.y + 22);
+        }
+        ctx.textAlign = 'left';
+        ctx.restore();
+      };
+
+      entities.drawPursuer = function drawPursuer(ctx, pursuer) {
+        var tile = getRenderTileSize(60);
+        var size = Math.max(42, Math.min(tile - 6, Math.round(tile * 0.9)));
+        ctx.save();
+        ctx.translate(pursuer.x, pursuer.y);
+        ctx.rotate(Math.atan2(pursuer.dirY || 1, pursuer.dirX || 0) + Math.PI * 0.5);
+        ctx.imageSmoothingEnabled = false;
+        ctx.drawImage(bagelOffscreen, Math.round(-size * 0.5), Math.round(-size * 0.5), size, size);
+        ctx.restore();
+      };
+
+      var coinPalette = {
+        1: '#2B2B2E',
+        2: '#60646D',
+        3: '#9AA0AA',
+        4: '#C9CED6',
+        5: '#EEF1F5',
+        6: '#767B84',
+        7: '#DDE2E8',
+        8: '#3A3D43'
+      };
+      var coinM = [
+        [0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0],
+        [0, 1, 2, 2, 2, 5, 5, 2, 2, 1, 0, 0],
+        [1, 2, 5, 5, 5, 5, 5, 5, 4, 2, 1, 0],
+        [1, 2, 5, 7, 7, 7, 7, 7, 4, 2, 1, 0],
+        [1, 2, 5, 7, 3, 3, 3, 7, 4, 2, 1, 0],
+        [1, 2, 5, 7, 3, 6, 6, 7, 4, 2, 1, 0],
+        [1, 2, 5, 7, 3, 6, 6, 7, 4, 2, 1, 0],
+        [1, 2, 4, 7, 3, 3, 3, 7, 4, 2, 1, 0],
+        [1, 2, 4, 7, 7, 7, 7, 7, 4, 2, 1, 0],
+        [0, 1, 2, 4, 4, 4, 4, 4, 2, 1, 0, 0],
+        [0, 0, 1, 2, 2, 2, 2, 2, 1, 0, 0, 0],
+        [0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0]
+      ];
+      var coinS = [
+        [0, 0, 0, 8, 8, 0, 0],
+        [0, 0, 8, 0, 0, 8, 0],
+        [0, 0, 8, 8, 8, 0, 0],
+        [0, 0, 0, 0, 0, 8, 0],
+        [0, 0, 8, 8, 8, 0, 0],
+        [0, 8, 0, 0, 0, 8, 0],
+        [0, 0, 8, 8, 8, 0, 0]
+      ];
+
+      var handPalette = {
+        1: '#381812',
+        2: '#E07B4F',
+        3: '#FFBA96',
+        4: '#B85B35'
+      };
+      var handGrid = (function buildHotdogHand32Cached() {
+        var width = 32;
+        var height = 32;
+        var grid = Array.from({ length: height }, function () { return Array(width).fill(0); });
+
+        function rect(g, x0, y0, x1, y1, value) {
+          for (var yy = Math.max(0, y0); yy < Math.min(g.length, y1); yy += 1) {
+            for (var xx = Math.max(0, x0); xx < Math.min(g[0].length, x1); xx += 1) {
+              g[yy][xx] = value;
+            }
+          }
+        }
+
+        function outline(fill, outlineValue) {
+          var out = fill.map(function (row) { return row.slice(); });
+          for (var y = 0; y < height; y += 1) {
+            for (var x = 0; x < width; x += 1) {
+              if (fill[y][x] === 0) {
+                continue;
+              }
+              for (var dy = -1; dy <= 1; dy += 1) {
+                for (var dx = -1; dx <= 1; dx += 1) {
+                  var nx = x + dx;
+                  var ny = y + dy;
+                  if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+                    continue;
+                  }
+                  if (fill[ny][nx] === 0) {
+                    out[ny][nx] = outlineValue;
+                  }
+                }
+              }
+            }
+          }
+          for (var y2 = 0; y2 < height; y2 += 1) {
+            for (var x2 = 0; x2 < width; x2 += 1) {
+              if (fill[y2][x2] !== 0) {
+                out[y2][x2] = fill[y2][x2];
+              }
+            }
+          }
+          return out;
+        }
+
+        function shade(fill) {
+          for (var y = 0; y < height; y += 1) {
+            for (var x = 0; x < width; x += 1) {
+              if (fill[y][x] !== 2) {
+                continue;
+              }
+              if ((x <= width * 0.40 && y <= height * 0.45) || (y <= 5 && x <= width * 0.65)) {
+                fill[y][x] = 3;
+              }
+              if ((x >= width * 0.62 && y >= height * 0.35) || (y >= height * 0.66)) {
+                fill[y][x] = 4;
+              }
+            }
+          }
+        }
+
+        var fingerWidth = 2;
+        var gap = 1;
+        var totalWidth = 5 * fingerWidth + 4 * gap;
+        var startX = Math.floor((width - totalWidth) / 2);
+        var lengths = [8, 10, 12, 10, 7];
+        var yBase = 10;
+        var palmBottom = 22;
+
+        for (var i = 0; i < 5; i += 1) {
+          var x0 = startX + i * (fingerWidth + gap);
+          var y0 = yBase - lengths[i];
+          rect(grid, x0, y0, x0 + fingerWidth, yBase, 2);
+          rect(grid, x0, y0 - 1, x0 + fingerWidth, y0, 2);
+        }
+
+        rect(grid, startX - 2, yBase, startX + totalWidth + 2, palmBottom, 2);
+        rect(grid, startX - 1, palmBottom, startX + totalWidth + 1, palmBottom + 2, 2);
+
+        for (var j = 0; j < 4; j += 1) {
+          var gx = startX + j * (fingerWidth + gap) + fingerWidth;
+          rect(grid, gx, yBase - 2, gx + gap, yBase + 1, 0);
+        }
+
+        shade(grid);
+        return outline(grid, 1);
+      })();
+
+      var trophyPalette = {
+        1: '#24180C',
+        2: '#E3AA33',
+        3: '#FFE68C',
+        4: '#B4781C',
+        5: '#5C3814'
+      };
+      var trophyGrid = (function buildTrophy32Cached() {
+        var width = 32;
+        var height = 32;
+        var grid = Array.from({ length: height }, function () { return Array(width).fill(0); });
+
+        function rect(g, x0, y0, x1, y1, value) {
+          for (var yy = Math.max(0, y0); yy < Math.min(g.length, y1); yy += 1) {
+            for (var xx = Math.max(0, x0); xx < Math.min(g[0].length, x1); xx += 1) {
+              g[yy][xx] = value;
+            }
+          }
+        }
+
+        function outline(fill, outlineValue) {
+          var out = fill.map(function (row) { return row.slice(); });
+          for (var y = 0; y < height; y += 1) {
+            for (var x = 0; x < width; x += 1) {
+              if (fill[y][x] === 0) {
+                continue;
+              }
+              for (var dy = -1; dy <= 1; dy += 1) {
+                for (var dx = -1; dx <= 1; dx += 1) {
+                  var nx = x + dx;
+                  var ny = y + dy;
+                  if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+                    continue;
+                  }
+                  if (fill[ny][nx] === 0) {
+                    out[ny][nx] = outlineValue;
+                  }
+                }
+              }
+            }
+          }
+          for (var y2 = 0; y2 < height; y2 += 1) {
+            for (var x2 = 0; x2 < width; x2 += 1) {
+              if (fill[y2][x2] !== 0) {
+                out[y2][x2] = fill[y2][x2];
+              }
+            }
+          }
+          return out;
+        }
+
+        rect(grid, 10, 6, 22, 8, 2);
+        rect(grid, 9, 8, 23, 14, 2);
+        rect(grid, 10, 14, 22, 16, 2);
+        rect(grid, 10, 8, 12, 14, 3);
+        rect(grid, 20, 8, 22, 14, 4);
+        rect(grid, 12, 12, 20, 13, 3);
+        rect(grid, 6, 9, 9, 12, 2);
+        rect(grid, 5, 10, 6, 11, 2);
+        rect(grid, 23, 9, 26, 12, 2);
+        rect(grid, 26, 10, 27, 11, 2);
+        rect(grid, 6, 11, 9, 12, 4);
+        rect(grid, 23, 11, 26, 12, 4);
+        rect(grid, 14, 16, 18, 21, 2);
+        rect(grid, 14, 16, 15, 21, 3);
+        rect(grid, 17, 16, 18, 21, 4);
+        rect(grid, 12, 21, 20, 23, 5);
+        rect(grid, 10, 23, 22, 26, 5);
+        rect(grid, 11, 23, 12, 26, 2);
+        rect(grid, 20, 23, 21, 26, 4);
+        rect(grid, 10, 23, 22, 24, 4);
+        rect(grid, 11, 24, 21, 25, 5);
+        return outline(grid, 1);
+      })();
+
+      function drawGridSpriteAt(context, centerX, centerY, size, grid, palette, gridSize) {
+        var block = Math.max(1, Math.floor(size / gridSize));
+        var drawW = gridSize * block;
+        var x0 = Math.round(centerX - drawW * 0.5);
+        var y0 = Math.round(centerY - drawW * 0.5);
+
+        context.save();
+        context.imageSmoothingEnabled = false;
+        for (var rowIndex = 0; rowIndex < grid.length; rowIndex += 1) {
+          for (var colIndex = 0; colIndex < grid[rowIndex].length; colIndex += 1) {
+            var value = grid[rowIndex][colIndex];
+            if (!value) {
+              continue;
+            }
+            context.fillStyle = palette[value];
+            context.fillRect(x0 + colIndex * block, y0 + rowIndex * block, block, block);
+          }
+        }
+        context.restore();
+      }
+
+      entities.drawFragment = function drawFragment(ctx, fragment, time) {
+        var key = window.ULEAP_CURRENT_UNIVERSE_KEY || 'stone';
+        var tile = getRenderTileSize(60);
+        var pulse = 1 + Math.sin(time * 5 + fragment.id) * 0.10;
+        var baseSize = Math.max(26, Math.min(tile - 16, Math.round(tile * 0.72)));
+        var size = Math.round(Math.min(tile - 12, baseSize * pulse));
+
+        if (key === 'laundromat') {
+          drawGridSpriteAt(ctx, fragment.x, fragment.y, size, coinM, coinPalette, 12);
+
+          var block = Math.max(1, Math.floor(size / 12));
+          var drawW = 12 * block;
+          var x0 = Math.round(fragment.x - drawW * 0.5);
+          var y0 = Math.round(fragment.y - drawW * 0.5);
+          var signW = coinS[0].length * block;
+          var signH = coinS.length * block;
+          var sx = x0 + ((drawW - signW) >> 1);
+          var sy = y0 + ((drawW - signH) >> 1);
+
+          ctx.save();
+          ctx.imageSmoothingEnabled = false;
+          for (var r = 0; r < coinS.length; r += 1) {
+            for (var c = 0; c < coinS[r].length; c += 1) {
+              var v = coinS[r][c];
+              if (!v) {
+                continue;
+              }
+              ctx.fillStyle = coinPalette[v];
+              ctx.fillRect(sx + c * block, sy + r * block, block, block);
+            }
+          }
+          ctx.fillStyle = '#FFFFFF';
+          ctx.globalAlpha = 0.85;
+          ctx.fillRect(x0 + 5 * block, y0 + 2 * block, block, block);
+          ctx.fillRect(x0 + 8 * block, y0 + 4 * block, block, block);
+          ctx.restore();
+          return;
+        }
+
+        if (key === 'hotdog') {
+          drawGridSpriteAt(ctx, fragment.x, fragment.y, size, handGrid, handPalette, 32);
+          return;
+        }
+
+        if (key === 'kungfu') {
+          drawGridSpriteAt(ctx, fragment.x, fragment.y, size, trophyGrid, trophyPalette, 32);
+          return;
+        }
+
+        ctx.save();
+        ctx.translate(fragment.x - size * 0.5, fragment.y - size * 0.5);
+        drawFragmentSprite(ctx, 0, 0, size / 32);
+        ctx.restore();
+      };
+
+      var storySlide = document.getElementById('story-slide');
+      if (storySlide) {
+        storySlide.style.backgroundImage = 'url(' + backgroundSources.stone + ')';
+      }
+    })();
+  </script>
+  <script>
+    window.ULEAP_ENGINE = {
+      storyDurationMs: 2000,
+      opening: {
+        backgroundImage: 'assets/art/engine/opening.jpg'
+      },
+      storySlides: []
+    };
+  </script>
+  <script src="js/app.js"></script>
 </body>
 </html>
